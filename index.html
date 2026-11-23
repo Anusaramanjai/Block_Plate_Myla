@@ -5,8 +5,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--navy:#14405f;--blue:#1c5a87;--cyan:#1ea0cf;--yel:#fbb615;--mag:#d4145a;--bg:#eef3f7;--card:#fff;--ink:#12303f;--mute:#5d7686;--line:#d8e4ec;--soft:#f3f8fb;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d202e;--card:#16344a;--ink:#e8f2f8;--mute:#9fb8c8;--line:#27506b;--soft:#1b3d56;color-scheme:dark}}
+:root{--navy:#14405f;--blue:#1c5a87;--cyan:#1ea0cf;--yel:#fbb615;--mag:#d4145a;--bg:#0d202e;--card:#16344a;--ink:#e8f2f8;--mute:#9fb8c8;--line:#27506b;--soft:#1b3d56;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme="dark"]{--bg:#0d202e;--card:#16344a;--ink:#e8f2f8;--mute:#9fb8c8;--line:#27506b;--soft:#1b3d56;color-scheme:dark}
 *{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Prompt","Noto Sans Thai",Tahoma,sans-serif;line-height:1.5}
@@ -58,7 +57,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
 .sc.of:hover .im,.sc.of:focus-visible .im{border-color:var(--mag);box-shadow:0 0 0 5px rgba(212,20,90,.25)}
 .sc h3{margin:10px 0 0;font-size:30px;font-weight:700}.sc p{margin:0;color:var(--mute);font-size:13.5px}
 .sc.fx h3,#dt.fx{color:#b87d00}.sc.of h3,#dt.of{color:var(--mag)}
-@media (prefers-color-scheme:dark){.sc.fx h3,#dt.fx{color:var(--yel)}.sc.of h3,#dt.of{color:#ff6fa3}}
+.sc.fx h3,#dt.fx{color:var(--yel)}.sc.of h3,#dt.of{color:#ff6fa3}
 .dh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 #dt{margin:0;font-size:34px;text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:6px}
 .modes{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px;background:var(--card)}
@@ -118,6 +117,10 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
 .st{border-radius:999px;padding:1px 10px;font-size:12px;font-weight:600;color:#fff}
 .st.free{background:#2f9e5b}.st.used{background:#56657c}.st.hold{background:#c98f00}.st.closed{background:#7a7a7a}
 #dbSum tr[data-sh]{cursor:pointer}#dbSum tr[data-sh]:hover td{background:var(--soft)}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.daybox{border:2px solid var(--line);background:var(--soft);color:var(--ink);border-radius:16px;padding:16px;text-align:left;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:2px}
+.daybox b{font-size:24px;letter-spacing:.5px;color:var(--cyan)}.daybox small{color:var(--mute)}.daybox:hover,.daybox:focus-visible{border-color:var(--yel)}
+.relbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.relbar select{width:auto}
 </style></head><body>
 
 <section id="land">
@@ -151,7 +154,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
   <div id="detail" hidden>
    <div class="dh"><button class="btn l" id="back">← เลือกระบบ</button><h1 id="dt">Flexo</h1><div class="sp"></div><button class="btn l" id="btnCsv">ส่งออกรายการจอง CSV</button></div>
    <div class="win" id="accBox" style="margin-bottom:16px" hidden><div class="tb"><span class="dots"><i></i><i></i><i></i></span>งานที่รับแล้ว <span class="sp"></span><button class="btn l" id="accClear" style="padding:3px 10px;font-size:12px">ล้างรายการที่ข้อมูลเข้าแล้ว</button></div><div class="tw" id="accTab" style="max-height:280px"></div></div>
-   <div class="modes"><button class="mode on" data-m="reg">ลงทะเบียน (จอง) Block / Plate / Mylar</button><button class="mode" data-m="find">ค้นหาข้อมูล Block / Plate / Mylar</button><button class="mode" data-m="db">ฐานข้อมูลเบอร์ Block / Plate / Mylar</button></div>
+   <div class="modes"><button class="mode on" data-m="reg">ลงทะเบียน (จอง) Block / Plate / Mylar</button><button class="mode" data-m="find">ค้นหาข้อมูล Block / Plate / Mylar</button><button class="mode" data-m="db">ฐานข้อมูลเบอร์ Block / Plate / Mylar</button><button class="mode" data-m="rel">ปลดจากวางแผน</button></div>
    <div class="win" id="regBox" style="margin-bottom:16px"><div class="tb"><span class="dots"><i></i><i></i><i></i></span>ลงทะเบียน (จอง) เบอร์ใหม่</div>
     <div class="pad">
      <div id="st1"><h3 class="ttl" style="margin-top:0">เลือกประเภทที่ต้องการจอง</h3>
@@ -207,6 +210,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn l" id="dbCsv">ส่งออก CSV ทุกเบอร์</button><span style="color:var(--mute);font-size:13px">สถานะ “ใช้งานจริง” มาจากไฟล์ Excel · “จองรอเข้าระบบ” จะหายเองเมื่อเบอร์นั้นอยู่ใน Excel หลัง Update Data หรือเมื่อค้างเกิน 1 วัน (คืนเป็นช่องว่าง)</span></div>
     </div>
    </div>
+   <div class="win" id="relBox" hidden><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span id="relHead">ปลดจากวางแผน</span></div><div class="pad" id="relBody"></div></div>
    <div class="win" id="findBox"><div class="tb"><span class="dots"><i></i><i></i><i></i></span>ค้นหาข้อมูล (เรียลไทม์) <span class="sp"></span><span id="cnt" style="font-weight:400;font-size:12.5px"></span></div>
     <div class="pad srch">
      <div><label>ค้นหา Block-No. / Plate-No. / Mylar-No.</label><input id="qNo" autocomplete="off"></div>
@@ -224,6 +228,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
  <div class="pad" style="padding:20px"><label>ฝ่าย (Role)</label><select id="uRole" style="margin-bottom:14px"><option value="scheduling">Scheduling</option><option value="production">Production</option></select>
  <div id="uDivW" hidden><label>แผนก Production</label><select id="uDiv" style="margin-bottom:14px"><option value="converting">Converting</option><option value="offset">Offset</option></select></div>
  <label>ผู้ใช้งาน</label><select id="uName" style="margin-bottom:14px"></select>
+ <div id="uPwW"><label>รหัสผ่าน (Scheduling)</label><input type="password" id="uPw" autocomplete="off" placeholder="รหัสผ่าน" style="margin-bottom:14px"></div>
  <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn l" id="uNo">ยกเลิก</button><button class="btn" id="uOk">เข้าสู่ระบบ</button></div></div></dialog>
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv" hidden>
@@ -272,7 +277,7 @@ function groupRows(){
 }
 function done(save){if(save){autoMap();groupRows();kvSet("data",{h:S.headers,r:S.rows,n:S.name,t:S.fileTime,v:S.remoteVer});kvSet("map2",S.map)}mapUI();stats();if(save)reconcile();render();if(save&&online()&&can("upload"))pushSnapshot()}
 function loadBuf(buf,name,mod){
-  try{var wb=XLSX.read(new Uint8Array(buf),{type:"array"});S.name=name;S.fileTime=mod||Date.now();parse(wb);done(true);toast("อัปเดตข้อมูลแล้ว "+S.rows.length.toLocaleString()+" แถว")}
+  try{var wb=XLSX.read(new Uint8Array(buf),{type:"array"});S.name=name;S.fileTime=mod||Date.now();var ps=can("upload")&&S.rows.length?relSnap(S.rows,S.map):null;parse(wb);done(true);toast("อัปเดตข้อมูลแล้ว "+S.rows.length.toLocaleString()+" แถว");if(ps)detectReleases(ps)}
   catch(e){toast("อ่านไฟล์ไม่ได้ ลองเลือกไฟล์ .xlsx อีกครั้ง")}
 }
 function readFile(f){var r=new FileReader();r.onload=function(){loadBuf(r.result,f.name,f.lastModified)};r.readAsArrayBuffer(f)}
@@ -314,7 +319,7 @@ function render0(){
   expireHolds();labelsUI();
   ["flexo","offset"].forEach(function(s){$("c"+s[0].toUpperCase()+s.slice(1)).textContent=B.filter(function(b){return b.sys===s}).length+" รายการจอง"});
   document.querySelectorAll(".mode").forEach(function(e){e.classList.toggle("on",e.dataset.m===S.mode)});
-  $("regBox").hidden=S.mode!=="reg";$("findBox").hidden=S.mode!=="find";$("dbBox").hidden=S.mode!=="db";regUI();syncNo();if(S.mode==="db")dbUI();
+  $("regBox").hidden=S.mode!=="reg";$("findBox").hidden=S.mode!=="find";$("dbBox").hidden=S.mode!=="db";$("relBox").hidden=S.mode!=="rel";regUI();syncNo();if(S.mode==="db")dbUI();if(S.mode==="rel")relUI();
   var qn=toks("qNo"),qm=toks("qMat"),qp=toks("qPc");
   var m=S.map,pk=function(r,ks){var a=ks.filter(function(k){return m[k]>=0}).map(function(k){return r[m[k]]});return (a.length?a:r).join(" ")};
   var bs=B.filter(function(b){if(b.sys!==S.sys)return false;var o=bobj(b);return ok([o.block,o.plate,o.mylar].join(" "),qn)&&ok(o.mat,qm)&&ok(o.prod,qp)});
@@ -353,13 +358,15 @@ function csv(){
   var l=["ระบบ,ประเภท,ห้อง,ช่อง,เบอร์,Cust-Code,ชื่อลูกค้า,Product Code,Material,ผู้จอง,วันที่"].concat(B.map(function(b){return [SY[b.sys].n,tn(b.type,b.sys),b.room||"",b.slot||"",b.no,b.custcode||"",b.cust,b.prod,b.mat,b.by,b.at].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(",")}));
   var a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+l.join("\n")],{type:"text/csv"}));a.download="bookings.csv";a.click();
 }
-function open(s){S.sys=s;S.btype="";S.room="";S.slot="";$("pick").hidden=true;$("detail").hidden=false;$("dt").textContent=SY[s].n;$("dt").className=s==="flexo"?"fx":"of";["qNo","qMat","qPc"].forEach(function(i){$(i).value=""});delete $("fNo").dataset.touched;render()}
+function open(s){S.sys=s;S.relDay="";S.btype="";S.room="";S.slot="";$("pick").hidden=true;$("detail").hidden=false;$("dt").textContent=SY[s].n;$("dt").className=s==="flexo"?"fx":"of";["qNo","qMat","qPc"].forEach(function(i){$(i).value=""});delete $("fNo").dataset.touched;render()}
 
 /* ---------- events ---------- */
 $("signin").onclick=function(){loginFill();$("dlg").showModal()};
 $("uRole").onchange=$("uDiv").onchange=function(){loginUsers()};
 $("uNo").onclick=function(){$("dlg").close()};
+$("uPw").addEventListener("keydown",function(e){if(e.key==="Enter")$("uOk").click()});
 $("uOk").onclick=function(){var n=$("uName").value;if(!n){toast("กรุณาเลือกผู้ใช้งาน");return}
+  if(curRole()==="scheduling"&&$("uPw").value!=="1234"){toast("รหัสผ่านไม่ถูกต้อง");$("uPw").value="";$("uPw").focus();return}
   roleKey=curRole();user=n;kvSet("user",n);kvSet("session",{role:roleKey,name:n});$("dlg").close();$("land").hidden=true;$("app").hidden=false;$("pick").hidden=false;$("detail").hidden=true;whoUI();
   var sy=ROLES[roleKey].systems;if(sy.length===1)open(sy[0]);else render();
   pullAll()};
@@ -760,17 +767,101 @@ document.addEventListener("click",function(e){var a=e.target.closest("[data-acc]
 $("btnSync").onclick=function(){pullAll().then(function(){toast("ดึงข้อมูลล่าสุดแล้ว")})};
 $("accClear").onclick=function(){AD=AD.filter(function(d){return d.by!==user});kvSet("accdone",AD);render()};
 
+/* ---------- release from planning ---------- */
+var REL=[];
+function dayKey(d){d=d||new Date();return pad(d.getDate(),2)+pad(d.getMonth()+1,2)+d.getFullYear()}
+function toRel(r){return{id:r.id,day:r.day,type:r.type,sys:r.sys,no_text:r.no,code:r.code||"",cust:r.cust||"",prod:r.prod||"",mat:r.mat||"",mach:r.mach||"",detected_by:r.by||"",detected_at:r.at}}
+function fromRel(x){return{id:x.id,day:x.day,type:x.type,sys:x.sys,no:x.no_text,code:x.code,cust:x.cust,prod:x.prod,mat:x.mat,mach:x.mach,by:x.detected_by,at:+x.detected_at,doneBy:x.done_by||"",doneAt:x.done_at?+x.done_at:0}}
+function relSnap(rows,map){
+  var out={};
+  ["block","plate","mylar"].forEach(function(t){var col=map[t];if(!(col>=0))return;
+    rows.forEach(function(r){var mach=map.sys>=0?r[map.sys]:"",sys=OFFRE.test(mach)?"offset":"flexo",nums=[];
+      if(sys==="offset"&&(t==="block"||t==="mylar"))capNos(r[col],t).forEach(function(q){nums.push(cp(q.n,q.p))});
+      else parseNos(r[col]).forEach(function(q){nums.push(sid(t,q.c,q.n))});
+      var g=function(k){return map[k]>=0?r[map[k]]:""};
+      nums.forEach(function(no){out[t+"|"+sys+"|"+no]={type:t,sys:sys,no:no,code:g("custcode"),cust:g("cust"),prod:g("prod"),mat:g("mat"),mach:g("sys")}})})});
+  return out;
+}
+function pushRel(list){
+  return rq("POST","rpc/add_releases",{p:list.map(toRel)}).then(function(){list.forEach(function(r){delete r.u});kvSet("releases",REL)}).catch(function(){toast("บันทึกรายการปลดขึ้นฐานข้อมูลไม่สำเร็จ · ตรวจสอบอินเทอร์เน็ต หรือรัน release_migration.sql")});
+}
+function detectReleases(prev){
+  try{
+    var cur=relSnap(S.rows,S.map),dk=dayKey(),now=Date.now(),gone=[];
+    Object.keys(prev).forEach(function(k){if(!cur[k]&&!REL.some(function(r){return r.id===dk+"|"+k}))gone.push({k:k,v:prev[k]})});
+    if(!gone.length)return;
+    var fx=gone.filter(function(g){return g.v.sys==="flexo"}).length;
+    if(!confirm("เทียบกับข้อมูลชุดก่อนหน้า พบ "+gone.length+" เบอร์ที่หายไปจากระบบ (Flexo "+fx+" · Offset "+(gone.length-fx)+")\n\nบันทึกเป็นรายการ “ปลดจากวางแผน” วันที่ "+dk+" ให้ Production หรือไม่?\n(ถ้าเลือกไฟล์ผิด หรือข้อมูลไม่ครบ ให้กดยกเลิก)"))return;
+    var add=gone.map(function(g){var v=g.v;return{id:dk+"|"+g.k,day:dk,type:v.type,sys:v.sys,no:v.no,code:v.code,cust:v.cust,prod:v.prod,mat:v.mat,mach:v.mach,by:user,at:now,doneBy:"",doneAt:0,u:1}});
+    REL=add.concat(REL);kvSet("releases",REL);if(online())pushRel(add);
+    toast("บันทึกรายการปลดวันที่ "+dk+" จำนวน "+add.length+" เบอร์");
+  }catch(e){}
+}
+function markReleased(ids){
+  if(!can("release")){toast("เฉพาะ Production ที่กดปลดได้");return}
+  var hit=REL.filter(function(r){return ids.indexOf(r.id)>=0&&!r.doneAt});if(!hit.length)return;
+  var now=Date.now();hit.forEach(function(r){r.doneBy=user;r.doneAt=now});kvSet("releases",REL);render();toast("บันทึก “ปลดแล้ว” "+hit.length+" เบอร์ โดย "+user);
+  if(online())rq("POST","rpc/mark_released",{p_ids:hit.map(function(r){return r.id}),p_by:user}).catch(function(e){
+    hit.forEach(function(r){r.doneBy="";r.doneAt=0});kvSet("releases",REL);render();
+    toast(/PGRST202|mark_released|404/.test(String(e.status)+" "+e.message)?"ฐานข้อมูลยังไม่รองรับ · ให้ผู้ดูแลรัน release_migration.sql ก่อน":"บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต")});
+}
+function relRoom(r){try{if(r.sys==="offset"&&(r.type==="block"||r.type==="mylar")){var q=capNos(r.no,r.type)[0];return q?roomOf(r.type,q.n):""}var p=parseBn(r.no);return p?roomOf(r.type,p.c):""}catch(e){return""}}
+function relDayRows(){return REL.filter(function(r){return r.sys===S.sys&&r.day===S.relDay})}
+function relView(){return relDayRows().filter(function(r){return(!S.relType||r.type===S.relType)&&(S.relSt==="done"?r.doneAt:S.relSt==="todo"?!r.doneAt:true)}).sort(function(a,b){return a.type===b.type?(a.no>b.no?1:a.no<b.no?-1:0):(a.type>b.type?1:-1)})}
+function relCells(r,i){return[i+1,tn(r.type,r.sys),r.no,relRoom(r),r.code,r.cust,r.prod,r.mat,r.mach,r.doneAt?"ปลดแล้ว":"รอปลด",r.doneAt?r.doneBy:"",r.doneAt?new Date(r.doneAt).toLocaleString("th-TH"):""]}
+var REL_H=["ลำดับ","ประเภท","เบอร์","ห้อง","Cust-Code","ชื่อลูกค้า","PC","Material","Machine","สถานะ","ปลดโดย","เวลาที่ปลด"];
+function relUI(){
+  var b=$("relBody"),all=REL.filter(function(r){return r.sys===S.sys});
+  if(!S.relDay){
+    var days={};all.forEach(function(r){var d=days[r.day]||(days[r.day]={n:0,done:0,ts:0});d.n++;if(r.doneAt)d.done++;d.ts=Math.max(d.ts,r.at||0)});
+    var ks=Object.keys(days).sort(function(x,y){return days[y].ts-days[x].ts});
+    $("relHead").textContent="ปลดจากวางแผน · "+SY[S.sys].n+" · เลือกวันที่";
+    b.innerHTML=ks.length?'<div class="daygrid">'+ks.map(function(k){var d=days[k];return'<button class="daybox" data-day="'+k+'"><b>'+k+"</b><span>"+d.n+" รายการ</span><small>ปลดแล้ว "+d.done+"/"+d.n+(d.done<d.n?" · รอปลด "+(d.n-d.done):" · ครบแล้ว")+"</small></button>"}).join("")+"</div>":'<div class="empty">ยังไม่มีรายการปลด · ระบบบันทึกให้อัตโนมัติเมื่อ Scheduling อัปเดตข้อมูล แล้วมีเบอร์หายไปจากรอบก่อน</div>';
+    return;
+  }
+  var rows=relView(),tot=relDayRows(),dn=tot.filter(function(r){return r.doneAt}).length,pr=can("release");
+  $("relHead").textContent="ปลดจากวางแผน · "+SY[S.sys].n+" · "+S.relDay;
+  var sel=function(f,v,ops){return'<select data-f="'+f+'">'+ops.map(function(o){return'<option value="'+o[0]+'"'+(o[0]===(v||"")?" selected":"")+">"+o[1]+"</option>"}).join("")+"</select>"};
+  b.innerHTML='<div class="relbar"><button class="btn l" data-ra="back">← วันที่ทั้งหมด</button><b style="font-size:20px">'+esc(S.relDay)+'</b><span class="sp"></span>'+
+    sel("type",S.relType,[["","ทุกประเภท"],["block",tn("block",S.sys)],["plate",tn("plate",S.sys)],["mylar",tn("mylar",S.sys)]])+sel("st",S.relSt,[["","ทุกสถานะ"],["todo","รอปลด"],["done","ปลดแล้ว"]])+'</div>'+
+    '<div class="stats" style="margin-bottom:10px"><span>ทั้งหมด <b>'+tot.length+'</b></span><span>ปลดแล้ว <b>'+dn+'</b></span><span>รอปลด <b>'+(tot.length-dn)+'</b></span><span>แสดงอยู่ <b>'+rows.length+'</b></span></div>'+
+    '<div class="relbar">'+(pr?'<button class="btn c" data-ra="all">ปลดแล้วทั้งหมดที่แสดง</button>':"")+'<button class="btn l" data-ra="xls">ดาวน์โหลด Excel</button><button class="btn l" data-ra="pdf">ดาวน์โหลด PDF</button></div>'+
+    (rows.length?'<div class="tw" style="max-height:520px"><table><thead><tr>'+REL_H.slice(0,9).map(function(h){return"<th>"+h+"</th>"}).join("")+"<th>สถานะ</th><th></th></tr></thead><tbody>"+rows.map(function(r,i){var c=relCells(r,i);return"<tr>"+c.slice(0,9).map(function(x,j){return"<td>"+(j===2?"<b>"+esc(x)+"</b>":esc(x))+"</td>"}).join("")+"<td>"+(r.doneAt?'<span class="st used">ปลดแล้ว</span> '+esc(r.doneBy)+" · "+esc(c[11]):'<span class="st hold">รอปลด</span>')+"</td><td>"+(!r.doneAt&&pr?'<button class="btn c" data-rel="'+esc(r.id)+'" style="padding:3px 10px;font-size:12px">ปลดแล้ว</button>':"")+"</td></tr>"}).join("")+"</tbody></table></div>":'<div class="empty">ไม่พบรายการตามตัวกรอง</div>');
+}
+function relXls(){
+  var rows=relView();if(!rows.length){toast("ไม่มีรายการให้ดาวน์โหลด");return}
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet([REL_H].concat(rows.map(relCells)));
+  ws["!cols"]=[6,14,12,12,12,30,24,14,12,10,14,20].map(function(w){return{wch:w}});
+  XLSX.utils.book_append_sheet(wb,ws,"ปลด "+S.relDay);XLSX.writeFile(wb,"release_"+S.relDay+"_"+SY[S.sys].n+".xlsx");
+}
+function relPdf(){
+  var rows=relView();if(!rows.length){toast("ไม่มีรายการให้ดาวน์โหลด");return}
+  var h='<!doctype html><html lang="th"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap"><title>release_'+S.relDay+'</title><style>@page{size:A4 landscape;margin:10mm}body{font-family:"Prompt","Noto Sans Thai",Tahoma,sans-serif;font-size:11px;color:#111}h1{font-size:17px;margin:0 0 4px}p{margin:0 0 8px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #777;padding:3px 5px;text-align:left}th{background:#e6edf3}</style></head><body><h1>รายการปลด Block / Plate / Mylar จากวางแผน · '+SY[S.sys].n+' · '+S.relDay+'</h1><p>พิมพ์เมื่อ '+new Date().toLocaleString("th-TH")+' · โดย '+esc(user)+' · จำนวน '+rows.length+' รายการ</p><table><thead><tr>'+REL_H.slice(0,9).map(function(x){return"<th>"+x+"</th>"}).join("")+'<th>ปลดแล้ว / ลงชื่อ</th></tr></thead><tbody>'+rows.map(function(r,i){var c=relCells(r,i);return"<tr>"+c.slice(0,9).map(function(x){return"<td>"+esc(x)+"</td>"}).join("")+"<td>"+(r.doneAt?"✔ "+esc(r.doneBy)+" "+esc(c[11]):"☐")+"</td></tr>"}).join("")+"</tbody></table></body></html>";
+  var f=document.createElement("iframe");f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";document.body.appendChild(f);
+  var d=f.contentWindow.document;d.open();d.write(h);d.close();toast("เลือก “บันทึกเป็น PDF” ในหน้าต่างพิมพ์");
+  setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){}setTimeout(function(){f.remove()},3000)},900);
+}
+$("relBody").addEventListener("click",function(e){
+  var d=e.target.closest("[data-day]");if(d){S.relDay=d.dataset.day;S.relType="";S.relSt="";render();return}
+  var r=e.target.closest("[data-rel]");if(r){markReleased([r.dataset.rel]);return}
+  var a=e.target.closest("[data-ra]");if(!a)return;var k=a.dataset.ra;
+  if(k==="back"){S.relDay="";render()}
+  else if(k==="all"){var v=relView().filter(function(x){return!x.doneAt});if(!v.length){toast("ไม่มีรายการรอปลดในรายการที่แสดง");return}if(confirm("บันทึกว่า “ปลดแล้ว” "+v.length+" เบอร์ ?"))markReleased(v.map(function(x){return x.id}))}
+  else if(k==="xls")relXls();else if(k==="pdf")relPdf();
+});
+$("relBody").addEventListener("change",function(e){var f=e.target.dataset.f;if(f==="type")S.relType=e.target.value;else if(f==="st")S.relSt=e.target.value;else return;render()});
+
 /* ---------- roles ---------- */
 var ROLES={
   scheduling:{label:"Scheduling",users:["Pimjai","Anusara","Sakonl","Urai"],systems:["flexo","offset"],can:{book:1,cancelAny:1,flags:1,upload:1}},
-  converting:{label:"Production · Converting",users:["Khathawut","Suchat","Uthai"],systems:["flexo"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1}},
-  offset:{label:"Production · Offset",users:["Parsong","Chalearmchai","Terapong"],systems:["offset"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1}}
+  converting:{label:"Production · Converting",users:["Khathawut","Suchat","Uthai"],systems:["flexo"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1,release:1}},
+  offset:{label:"Production · Offset",users:["Parsong","Chalearmchai","Terapong"],systems:["offset"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1,release:1}}
 };
 var roleKey="",lastSess=null,netOK=true;
 function can(k){var r=ROLES[roleKey];return !!(r&&r.can[k])}
 function curRole(){return $("uRole").value==="scheduling"?"scheduling":$("uDiv").value}
 function loginUsers(sel){
-  $("uDivW").hidden=$("uRole").value==="scheduling";
+  $("uDivW").hidden=$("uRole").value==="scheduling";$("uPwW").hidden=$("uRole").value!=="scheduling";$("uPw").value="";
   var us=ROLES[curRole()].users;
   $("uName").innerHTML=us.map(function(n){return '<option value="'+n+'"'+(n===sel?" selected":"")+">"+n+"</option>"}).join("");
 }
@@ -782,7 +873,7 @@ function loginFill(){
 function whoUI(){$("who").textContent="ผู้ใช้: "+user+" · "+ROLES[roleKey].label+(online()?(netOK?" · ออนไลน์":" · ออฟไลน์ (ใช้ข้อมูลที่แคชไว้)"):" · เครื่องนี้เท่านั้น (ยังไม่ได้ตั้งค่า Supabase)")}
 function permUI(){
   $("btnUpdate").hidden=!can("upload");$("btnPick").hidden=!can("upload");$("btnSync").hidden=can("upload")||!online();
-  var rb=document.querySelector(".mode[data-m=reg]");if(rb){rb.hidden=!can("book");document.querySelector(".modes").style.gridTemplateColumns="repeat("+(can("book")?3:2)+",1fr)"}
+  var rb=document.querySelector(".mode[data-m=reg]");if(rb){rb.hidden=!can("book");document.querySelector(".modes").style.gridTemplateColumns="repeat("+(can("book")?4:3)+",1fr)"}
   if(!can("flags"))document.querySelectorAll("#dbTab [data-a=close],#dbTab [data-a=open]").forEach(function(b){b.remove()});
   if(!can("cancelAny"))document.querySelectorAll("#dbTab [data-a=cancel],#res [data-x]").forEach(function(b){var id=b.dataset.b||b.dataset.x,bk=B.filter(function(x){return String(x.id)===String(id)})[0];if(bk&&bk.by!==user)b.remove()});
   var r=ROLES[roleKey];$("back").hidden=!!(r&&r.systems.length===1);
@@ -820,11 +911,12 @@ function pullAll(){
   if(!online()||pulling)return Promise.resolve();
   pulling=true;
   return rq("POST","rpc/expire_holds",{}).catch(function(){}).then(function(){
-    return Promise.all([rq("GET","holds?select=*&order=id.desc"),rq("GET","slot_flags?select=*"),rq("GET","excel_snapshot?select=id,ver&id=eq.1")])
+    return Promise.all([rq("GET","holds?select=*&order=id.desc"),rq("GET","slot_flags?select=*"),rq("GET","excel_snapshot?select=id,ver&id=eq.1"),rq("GET","releases?select=*&order=detected_at.desc&limit=5000").catch(function(){return null})])
   }).then(function(v){
     var wasOff=!netOK;netOK=true;
     PA=B.filter(function(b){return b.accTs&&b.accBy===user});B=v[0].map(fromR);kvSet("bookings2",B);
     F={};v[1].forEach(function(f){F[f.key]={note:f.note||"",by:f.by_user||"",at:f.at_text||""}});kvSet("flags",F);
+    if(v[3]){var srv=v[3].map(fromRel),loc=REL.filter(function(r){return r.u&&!srv.some(function(s){return s.id===r.id})});REL=srv.concat(loc);kvSet("releases",REL);if(loc.length&&can("upload"))pushRel(loc)}
     var m=v[2][0];
     if(m&&+m.ver!==S.remoteVer)return rq("GET","excel_snapshot?select=*&id=eq.1").then(function(x){var r=x[0];
       S.headers=r.headers;S.rows=r.rows;S.name=r.name;S.fileTime=+r.file_time;S.remoteVer=+r.ver;
@@ -835,10 +927,10 @@ function pullAll(){
 setInterval(function(){if(!document.hidden&&roleKey)pullAll()},30000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&roleKey)pullAll()});
 /* ---------- boot ---------- */
-Promise.all([kvGet("user"),kvGet("bookings2"),kvGet("data"),kvGet("map2"),kvGet("handle"),kvGet("flags"),kvGet("session"),kvGet("accdone")]).then(function(v){
+Promise.all([kvGet("user"),kvGet("bookings2"),kvGet("data"),kvGet("map2"),kvGet("handle"),kvGet("flags"),kvGet("session"),kvGet("accdone"),kvGet("releases")]).then(function(v){
   user=v[0]||"";B=v[1]||[];F=v[5]||{};
   if(v[6]){lastSess=v[6]}
-  AD=v[7]||[];
+  AD=v[7]||[];REL=v[8]||[];
   if(v[2]){S.headers=v[2].h;S.rows=v[2].r;S.name=v[2].n;S.fileTime=v[2].t;S.remoteVer=v[2].v;autoMap();if(v[3]){var am=S.map;S.map=v[3];FD.forEach(function(f){if(S.map[f[0]]===undefined)S.map[f[0]]=am[f[0]]})}}
   if(v[4])handle=v[4];
   mapUI();stats();render();
