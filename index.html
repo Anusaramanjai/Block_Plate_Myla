@@ -117,6 +117,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
 .st{border-radius:999px;padding:1px 10px;font-size:12px;font-weight:600;color:#fff}
 .st.free{background:#2f9e5b}.st.used{background:#56657c}.st.hold{background:#c98f00}.st.closed{background:#7a7a7a}
 #dbSum tr[data-sh]{cursor:pointer}#dbSum tr[data-sh]:hover td{background:var(--soft)}
+.relcols{display:grid;grid-template-columns:1fr 1fr}.relcol{padding:0 18px;min-width:0}.relcol+.relcol{border-left:3px solid var(--line)}.relcol h3{margin:0 0 12px;font-size:20px;display:flex;align-items:baseline;gap:10px}.relcol h3 span{font-size:13px;font-weight:400;color:var(--mute)}.relcol.todo h3{color:var(--yel)}.relcol.done h3{color:#3fbf6f}@media (max-width:760px){.relcols{grid-template-columns:1fr}.relcol+.relcol{border-left:0;border-top:3px solid var(--line);padding-top:16px;margin-top:16px}}
 .daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 .daybox{border:2px solid var(--line);background:var(--soft);color:var(--ink);border-radius:16px;padding:16px;text-align:left;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:2px}
 .daybox b{font-size:24px;letter-spacing:.5px;color:var(--cyan)}.daybox small{color:var(--mute)}.daybox:hover,.daybox:focus-visible{border-color:var(--yel)}
@@ -876,10 +877,12 @@ var REL_H=["ลำดับ","ประเภท","เบอร์","ห้อ�
 function relUI(){
   var b=$("relBody"),all=REL.filter(function(r){return r.sys===S.sys});
   if(!S.relDay){
-    var days={};all.forEach(function(r){var d=days[r.day]||(days[r.day]={n:0,done:0,ts:0});d.n++;if(r.doneAt)d.done++;d.ts=Math.max(d.ts,r.at||0)});
-    var ks=Object.keys(days).sort(function(x,y){return days[y].ts-days[x].ts});
+    var days={};all.forEach(function(r){var d=days[r.day]||(days[r.day]={n:0,done:0,ts:0,tsd:0});d.n++;if(r.doneAt){d.done++;d.tsd=Math.max(d.tsd,r.doneAt)}d.ts=Math.max(d.ts,r.at||0)});
+    var todo=Object.keys(days).filter(function(k){return days[k].n>days[k].done}).sort(function(x,y){return days[y].ts-days[x].ts});
+    var done=Object.keys(days).filter(function(k){return days[k].done>0}).sort(function(x,y){return days[y].tsd-days[x].tsd});
+    var card=function(k,st){var d=days[k],c=st==="todo"?d.n-d.done:d.done;return'<button class="daybox" data-day="'+k+'" data-st="'+st+'"><b>'+k+"</b><span>"+c+" รายการ</span><small>"+(st==="todo"?"รอปลด "+c+(d.done?" · ปลดแล้ว "+d.done:""):"ปลดแล้ว "+c+(d.n>d.done?" · ยังรอปลด "+(d.n-d.done):" · ครบแล้ว"))+"</small></button>"};
     $("relHead").textContent="ปลดจากวางแผน · "+SY[S.sys].n+" · เลือกวันที่";
-    b.innerHTML=ks.length?'<div class="daygrid">'+ks.map(function(k){var d=days[k];return'<button class="daybox" data-day="'+k+'"><b>'+k+"</b><span>"+d.n+" รายการ</span><small>ปลดแล้ว "+d.done+"/"+d.n+(d.done<d.n?" · รอปลด "+(d.n-d.done):" · ครบแล้ว")+"</small></button>"}).join("")+"</div>":'<div class="empty">ยังไม่มีรายการปลด · ระบบบันทึกให้อัตโนมัติเมื่อ Scheduling อัปเดตข้อมูล แล้วมีเบอร์หายไปจากรอบก่อน</div>';
+    b.innerHTML=all.length?'<div class="relcols"><div class="relcol todo"><h3>รอปลด <span>'+all.filter(function(r){return!r.doneAt}).length+' รายการ</span></h3>'+(todo.length?'<div class="daygrid">'+todo.map(function(k){return card(k,"todo")}).join("")+"</div>":'<div class="empty">ไม่มีรายการรอปลด</div>')+'</div><div class="relcol done"><h3>ปลดแล้ว <span>'+all.filter(function(r){return r.doneAt}).length+' รายการ</span></h3>'+(done.length?'<div class="daygrid">'+done.map(function(k){return card(k,"done")}).join("")+"</div>":'<div class="empty">ยังไม่มีรายการที่ปลดแล้ว</div>')+"</div></div>":'<div class="empty">ยังไม่มีรายการปลด · ระบบบันทึกให้อัตโนมัติเมื่อ Scheduling อัปเดตข้อมูล แล้วมีเบอร์หายไปจากรอบก่อน</div>';
     return;
   }
   var rows=relView(),tot=relDayRows(),dn=tot.filter(function(r){return r.doneAt}).length,pr=can("release");
@@ -905,7 +908,7 @@ function relPdf(){
   setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){}setTimeout(function(){f.remove()},3000)},900);
 }
 $("relBody").addEventListener("click",function(e){
-  var d=e.target.closest("[data-day]");if(d){S.relDay=d.dataset.day;S.relType="";S.relSt="";render();return}
+  var d=e.target.closest("[data-day]");if(d){S.relDay=d.dataset.day;S.relType="";S.relSt=d.dataset.st||"";render();return}
   var r=e.target.closest("[data-rel]");if(r){markReleased([r.dataset.rel]);return}
   var a=e.target.closest("[data-ra]");if(!a)return;var k=a.dataset.ra;
   if(k==="back"){S.relDay="";render()}
