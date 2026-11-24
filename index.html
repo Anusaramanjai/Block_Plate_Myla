@@ -231,6 +231,12 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
  <label>ผู้ใช้งาน</label><select id="uName" style="margin-bottom:14px"></select>
  <div id="uPwW"><label>รหัสผ่าน (Scheduling)</label><input type="password" id="uPw" autocomplete="off" placeholder="รหัสผ่าน" style="margin-bottom:14px"></div>
  <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn l" id="uNo">ยกเลิก</button><button class="btn" id="uOk">เข้าสู่ระบบ</button></div></div></dialog>
+<dialog id="dlgR"><div class="tb"><span class="dots"><i></i><i></i><i></i></span>Refresh data ก่อนโหลดไฟล์</div>
+ <div style="padding:18px 20px">
+  <p style="margin:0 0 6px"><strong>ต้อง Refresh ไฟล์ Excel จากฐานข้อมูลก่อน</strong></p>
+  <p style="margin:0 0 6px;color:var(--mute)">กด “สั่ง Refresh ให้เลย” จะมีจอดำขึ้นมา (ไม่ต้องเปิดไฟล์ Excel) รอจนขึ้นสีเขียวแล้วปิดจอดำได้เลย แอปจะโหลดข้อมูลใหม่ให้เองเมื่อไฟล์อัปเดตเสร็จ</p>
+  <p style="margin:0 0 16px;color:var(--mute);font-size:13px">ใช้ครั้งแรกบนเครื่องไหน ให้รัน install_refresh_button.bat 1 ครั้งก่อน และต้องเคยกด “เลือกไฟล์ใหม่” ชี้ไฟล์ Excel อย่างน้อย 1 ครั้ง</p>
+  <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button class="btn l" id="dlgRNo">ยกเลิก</button><button class="btn c" id="dlgROk">Refresh แล้ว โหลดไฟล์</button><button class="btn" id="dlgRRun">สั่ง Refresh ให้เลย</button></div></div></dialog>
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv" hidden>
 
@@ -297,6 +303,32 @@ async function update(){
   catch(e){toast("เปิดไฟล์เดิมไม่ได้ กรุณาเลือกไฟล์ใหม่");pick()}
 }
 
+/* ---------- Refresh เหมือนแอป Plate Check ---------- */
+var RPROTO=(window.TCSB_CONFIG&&window.TCSB_CONFIG.refreshProto)||"tcsbrefresh://run",watching=null;
+function confirmRefresh(){
+  var d=$("dlgR");if(!d.showModal){update();return}
+  $("dlgROk").onclick=function(){d.close();update()};
+  $("dlgRNo").onclick=function(){d.close()};
+  $("dlgRRun").onclick=function(){d.close();runRefresh()};
+  d.showModal();
+}
+async function runRefresh(){
+  window.location.href=RPROTO;
+  var base=0;
+  try{if(handle){var p=await handle.queryPermission({mode:"read"});if(p!=="granted")p=await handle.requestPermission({mode:"read"});if(p==="granted")base=(await handle.getFile()).lastModified}}catch(e){}
+  if(!handle||!base){toast("สั่ง Refresh แล้ว รอจอดำขึ้นสีเขียว จากนั้นกด “เลือกไฟล์ใหม่”");return}
+  toast("กำลังรอ Refresh เสร็จ จะโหลดข้อมูลให้อัตโนมัติ");
+  clearInterval(watching);
+  var n=0,btn=$("btnUpdate"),label="Update Data";btn.textContent="กำลังรอ Refresh…";
+  watching=setInterval(async function(){
+    n++;
+    try{var f=await handle.getFile();
+      if(f.lastModified>base){clearInterval(watching);btn.textContent=label;
+        setTimeout(async function(){try{readFile(await handle.getFile())}catch(e){toast("เปิดไฟล์ไม่ได้ กด Update Data อีกครั้ง")}},2500)}}catch(e){}
+    if(n>300){clearInterval(watching);btn.textContent=label;toast("หมดเวลารอ กด Update Data เมื่อ Refresh เสร็จ")}
+  },3000);
+}
+
 /* ---------- logic ---------- */
 function rowsFor(){var s=S.map.sys;if(!(s>=0))return S.rows;return S.rows.filter(function(r){var m=r[s],o=OFFRE.test(m);return S.sys==="offset"?(o||/bobst/i.test(m)):!o})}
 function nums(t){var a=[];if(S.map[t]>=0)rowsFor().forEach(function(r){a.push(r[S.map[t]])});B.forEach(function(b){if(b.sys===S.sys&&b.type===t)(b.nos||[b.no]).forEach(function(x){a.push(x)})});return a.filter(Boolean)}
@@ -308,7 +340,8 @@ function obj(r){var o={};FD.forEach(function(f){o[f[0]]=S.map[f[0]]>=0?r[S.map[f
 function bobj(b){return {sys:b.room||"",custcode:b.custcode,cust:b.cust,prod:b.prod,mat:b.mat,block:b.type==="block"?b.no:"",plate:b.type==="plate"?b.no:"",mylar:b.type==="mylar"?b.no:"",L:b.L,W:b.W,H:b.H}}
 function toks(id){return $(id).value.trim().toLowerCase().split(/\s+/).filter(Boolean)}
 function ok(t,q){t=t.toLowerCase();return q.every(function(w){return t.indexOf(w)>=0})}
-function stats(){
+function stats(){stats0();if(S.name&&S.fileTime&&Date.now()-S.fileTime>864e5)$("stats").insertAdjacentHTML("beforeend",'<span style="color:#c98f00;font-weight:600">ข้อมูลเก่า ควร Refresh</span>')}
+function stats0(){
   $("stats").innerHTML=S.name?"<span>ไฟล์ <b>"+esc(S.name)+"</b></span><span>แก้ไขล่าสุด <b>"+esc(new Date(S.fileTime).toLocaleString("th-TH"))+"</b></span><span>ข้อมูล <b>"+S.rows.length.toLocaleString()+"</b> แถว</span>":"<span>ยังไม่ได้เลือกไฟล์ Excel · กด “เลือกไฟล์ใหม่” ครั้งแรก แล้วครั้งต่อไปกด “Update Data”</span>";
 }
 function mapUI(){
@@ -374,7 +407,7 @@ $("uOk").onclick=function(){var n=$("uName").value;if(!n){toast("กรุณา
   var sy=ROLES[roleKey].systems;if(sy.length===1)open(sy[0]);else render();
   pullAll()};
 $("btnOut").onclick=function(){$("app").hidden=true;$("land").hidden=false;roleKey=""};
-$("btnPick").onclick=pick;$("btnUpdate").onclick=update;
+$("btnPick").onclick=pick;$("btnUpdate").onclick=function(){if(!handle)return pick();confirmRefresh()};
 $("file").onchange=function(){if(this.files[0])readFile(this.files[0]);this.value=""};
 $("pick").onclick=function(e){var c=e.target.closest(".sc");if(c)open(c.dataset.s)};
 $("back").onclick=function(){$("detail").hidden=true;$("pick").hidden=false;render()};
