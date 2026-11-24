@@ -118,6 +118,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
 .st.free{background:#2f9e5b}.st.used{background:#56657c}.st.hold{background:#c98f00}.st.closed{background:#7a7a7a}
 #dbSum tr[data-sh]{cursor:pointer}#dbSum tr[data-sh]:hover td{background:var(--soft)}
 .relcols{display:grid;grid-template-columns:1fr 1fr}.relcol{padding:0 18px;min-width:0}.relcol+.relcol{border-left:3px solid var(--line)}.relcol h3{margin:0 0 12px;font-size:20px;display:flex;align-items:baseline;gap:10px}.relcol h3 span{font-size:13px;font-weight:400;color:var(--mute)}.relcol.todo h3{color:var(--yel)}.relcol.done h3{color:#3fbf6f}@media (max-width:760px){.relcols{grid-template-columns:1fr}.relcol+.relcol{border-left:0;border-top:3px solid var(--line);padding-top:16px;margin-top:16px}}
+.ymbar{display:grid;grid-template-columns:210px 170px 1fr;gap:10px}@media (max-width:640px){.ymbar{grid-template-columns:1fr 1fr}.ymbar input{grid-column:1/-1}}
 .daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 .daybox{border:2px solid var(--line);background:var(--soft);color:var(--ink);border-radius:16px;padding:16px;text-align:left;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:2px}
 .daybox b{font-size:24px;letter-spacing:.5px;color:var(--cyan)}.daybox small{color:var(--mute)}.daybox:hover,.daybox:focus-visible{border-color:var(--yel)}
@@ -211,8 +212,8 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn l" id="dbCsv">ส่งออก CSV ทุกเบอร์</button><span style="color:var(--mute);font-size:13px">สถานะ “ใช้งานจริง” มาจากไฟล์ Excel · “จองรอเข้าระบบ” จะหายเองเมื่อเบอร์นั้นอยู่ใน Excel หลัง Update Data หรือเมื่อค้างเกิน 1 วัน (คืนเป็นช่องว่าง)</span></div>
     </div>
    </div>
-   <div class="win" id="histBox" hidden><div class="tb"><span class="dots"><i></i><i></i><i></i></span>ประวัติการรับ <span class="sp"></span><span id="histCnt" style="font-weight:400;font-size:12.5px"></span></div><div class="pad"><input id="hq" type="search" placeholder="ค้นหา เบอร์ / ผู้รับ / ผู้จอง / ลูกค้า / PC …" autocomplete="off"></div><div class="tw" id="histTab" style="max-height:560px"></div></div>
-   <div class="win" id="relBox" hidden><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span id="relHead">ปลดจากวางแผน</span></div><div class="pad" id="relBody"></div></div>
+   <div class="win" id="histBox" hidden><div class="tb"><span class="dots"><i></i><i></i><i></i></span>ประวัติการรับ <span class="sp"></span><span id="histCnt" style="font-weight:400;font-size:12.5px"></span></div><div class="pad"><div class="ymbar"><select id="hy" aria-label="ปี"></select><select id="hm" aria-label="เดือน"></select><input id="hq" type="search" placeholder="ค้นหา เบอร์ / ผู้รับ / ผู้จอง / ลูกค้า / PC …" autocomplete="off"></div></div><div class="tw" id="histTab" style="max-height:560px"></div></div>
+   <div class="win" id="relBox" hidden><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span id="relHead">ปลดจากวางแผน</span></div><div class="pad" id="relTools" style="padding-bottom:0"><div class="ymbar"><select id="ry" aria-label="ปี"></select><select id="rm" aria-label="เดือน"></select><input id="rq" type="search" placeholder="ค้นหา เบอร์ / ลูกค้า / PC / Material / ผู้ปลด … (ดูว่าปลดวันไหน)" autocomplete="off"></div></div><div class="pad" id="relBody"></div></div>
    <div class="win" id="findBox"><div class="tb"><span class="dots"><i></i><i></i><i></i></span>ค้นหาข้อมูล (เรียลไทม์) <span class="sp"></span><span id="cnt" style="font-weight:400;font-size:12.5px"></span></div>
     <div class="pad srch">
      <div><label>ค้นหา Block-No. / Plate-No. / Mylar-No.</label><input id="qNo" autocomplete="off"></div>
@@ -812,11 +813,23 @@ function accUI(){
   $("accHead").textContent=(off()?"Printing Plate":"Block")+" / Plate Die-cut / Mylar รอรับ ("+pend.length+")";
   $("accTab").innerHTML=pend.length?(prod?'<div class="empty" style="padding:8px 12px;text-align:left">ตรวจสอบ Cust-Code / ชื่อลูกค้า / PC / Material ให้ตรงกับข้อมูลที่ได้รับก่อนกดรับ · ข้อมูลดึงจาก Excel อัตโนมัติทุก 30 วินาที</div>':"")+'<table><thead><tr><th>จองเมื่อ</th><th>ประเภท</th><th>เบอร์</th><th>ห้อง</th><th>ผู้จอง</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>'+(prod?"ค้างมา":"เวลาที่เหลือ")+'</th><th></th></tr></thead><tbody>'+pend.map(function(b){var i=bkInfo(b);return"<tr><td>"+esc(b.at||"")+"</td><td>"+esc(tn(b.type,b.sys))+"</td><td><b>"+esc(b.no)+"</b></td><td>"+esc(b.room||"")+"</td><td>"+esc(b.by||"")+"</td>"+(i?"<td>"+esc(i.code||"")+"</td><td>"+esc(i.cust||"")+"</td><td>"+esc(i.prod||"")+"</td><td>"+esc(i.mat||"")+"</td>":'<td colspan="4" style="color:var(--mute)">รอข้อมูลจาก Excel (Scheduling ยังไม่ได้ Update Data)</td>')+"<td>"+(prod?ageTxt(b):esc(holdLeft(b)))+"</td><td>"+accBtn(b)+"</td></tr>"}).join("")+"</tbody></table>":'<div class="empty">ไม่มีรายการรอรับ</div>';
 }
+var MTH=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+function ymFill(sy,sm,pairs){
+  var cy=sy.value,cm=sm.value,ys={},ms={};
+  pairs.forEach(function(x){ys[x[0]]=1;if(!cy||String(x[0])===cy)ms[x[1]]=1});
+  sy.innerHTML='<option value="">ทุกปี</option>'+Object.keys(ys).sort().reverse().map(function(y){return'<option value="'+y+'">'+y+" (พ.ศ. "+(+y+543)+")</option>"}).join("");
+  sy.value=ys[cy]?cy:"";
+  sm.innerHTML='<option value="">ทุกเดือน</option>'+Object.keys(ms).sort(function(a,b){return a-b}).map(function(m){return'<option value="'+m+'">'+MTH[m-1]+"</option>"}).join("");
+  sm.value=ms[cm]?cm:"";
+}
+function ymOK(sy,sm,y,m){return(!sy.value||String(y)===sy.value)&&(!sm.value||String(m)===sm.value)}
 function histUI(){
   var seen={},rows=[];
   ALG.forEach(function(r){seen[r.id]=1;rows.push(r)});
   B.forEach(function(b){if(b.accTs&&!seen[String(b.id)])rows.push({id:String(b.id),sys:b.sys,type:b.type,no:b.no,room:b.room||"",by:b.by||"",at:b.at||"",accBy:b.accBy,accTs:b.accTs})});
   rows=rows.filter(function(r){return r.sys===S.sys}).sort(function(a,b){return b.accTs-a.accTs});
+  ymFill($("hy"),$("hm"),rows.map(function(r){var d=new Date(r.accTs);return[d.getFullYear(),d.getMonth()+1]}));
+  rows=rows.filter(function(r){var d=new Date(r.accTs);return ymOK($("hy"),$("hm"),d.getFullYear(),d.getMonth()+1)});
   var q=$("hq").value.trim().toLowerCase().split(/\s+/).filter(Boolean),out=[];
   rows.forEach(function(r){
     var inf=bkInfo({type:r.type,sys:r.sys,no:r.no,nos:String(r.no).split(",")}),alive=B.some(function(b){return String(b.id)===r.id});
@@ -829,7 +842,7 @@ function histUI(){
 }
 document.addEventListener("click",function(e){var a=e.target.closest("[data-acc]");if(a)acceptHold(a.dataset.acc)});
 $("btnSync").onclick=function(){pullAll().then(function(){toast("ดึงข้อมูลล่าสุดแล้ว")})};
-$("hq").oninput=histUI;
+$("hq").oninput=histUI;$("hy").onchange=histUI;$("hm").onchange=histUI;
 
 /* ---------- release from planning ---------- */
 var REL=[];
@@ -876,6 +889,19 @@ function relCells(r,i){return[i+1,tn(r.type,r.sys),r.no,relRoom(r),r.code,r.cust
 var REL_H=["ลำดับ","ประเภท","เบอร์","ห้อง","Cust-Code","ชื่อลูกค้า","PC","Material","Machine","สถานะ","ปลดโดย","เวลาที่ปลด"];
 function relUI(){
   var b=$("relBody"),all=REL.filter(function(r){return r.sys===S.sys});
+  $("relTools").hidden=!!S.relDay;
+  if(!S.relDay){
+    ymFill($("ry"),$("rm"),all.map(function(r){return[+r.day.slice(4),+r.day.slice(2,4)]}));
+    all=all.filter(function(r){return ymOK($("ry"),$("rm"),+r.day.slice(4),+r.day.slice(2,4))});
+    var qw=$("rq").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if(qw.length){
+      var hit=all.filter(function(r){var t=[r.no,r.code,r.cust,r.prod,r.mat,r.mach,r.doneBy,r.day,tn(r.type,r.sys)].join(" ").toLowerCase();return qw.every(function(w){return t.indexOf(w)>=0})}).sort(function(x,y){return(y.doneAt||y.at||0)-(x.doneAt||x.at||0)});
+      var fd=function(t){return t?new Date(t).toLocaleDateString("th-TH",{day:"numeric",month:"long",year:"numeric"}):"-"};
+      $("relHead").textContent="ปลดจากวางแผน · "+SY[S.sys].n+" · ผลค้นหา "+hit.length+" รายการ";
+      b.innerHTML=hit.length?'<div class="tw" style="max-height:560px"><table><thead><tr><th>เบอร์</th><th>ประเภท</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>สถานะ</th><th>ปลดเมื่อ</th><th>ปลดโดย</th><th>พบว่าหายจาก Excel</th></tr></thead><tbody>'+hit.slice(0,500).map(function(r){return"<tr><td><b>"+esc(r.no)+"</b></td><td>"+esc(tn(r.type,r.sys))+"</td><td>"+esc(r.code)+"</td><td>"+esc(r.cust)+"</td><td>"+esc(r.prod)+"</td><td>"+esc(r.mat)+"</td><td>"+(r.doneAt?'<span class="st used">ปลดแล้ว</span>':'<span class="st hold">รอปลด</span>')+"</td><td><b>"+esc(r.doneAt?fd(r.doneAt):"-")+"</b></td><td>"+esc(r.doneBy||"")+"</td><td>"+esc(fd(r.at))+" <small>("+esc(r.day)+")</small></td></tr>"}).join("")+"</tbody></table></div>":'<div class="empty">ไม่พบรายการที่ค้นหา</div>';
+      return;
+    }
+  }
   if(!S.relDay){
     var days={};all.forEach(function(r){var d=days[r.day]||(days[r.day]={n:0,done:0,ts:0,tsd:0});d.n++;if(r.doneAt){d.done++;d.tsd=Math.max(d.tsd,r.doneAt)}d.ts=Math.max(d.ts,r.at||0)});
     var todo=Object.keys(days).filter(function(k){return days[k].n>days[k].done}).sort(function(x,y){return days[y].ts-days[x].ts});
@@ -907,6 +933,7 @@ function relPdf(){
   var d=f.contentWindow.document;d.open();d.write(h);d.close();toast("เลือก “บันทึกเป็น PDF” ในหน้าต่างพิมพ์");
   setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){}setTimeout(function(){f.remove()},3000)},900);
 }
+["ry","rm"].forEach(function(i){$(i).addEventListener("change",render)});$("rq").addEventListener("input",render);
 $("relBody").addEventListener("click",function(e){
   var d=e.target.closest("[data-day]");if(d){S.relDay=d.dataset.day;S.relType="";S.relSt=d.dataset.st||"";render();return}
   var r=e.target.closest("[data-rel]");if(r){markReleased([r.dataset.rel]);return}
