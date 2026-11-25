@@ -707,7 +707,7 @@ function expireHolds(){
   B.forEach(function(b){(b.type&&typeof b.id==="number"&&!b.accTs&&!stopped(b)&&now-b.id>HOLD_MS?old:keep).push(b)});
   if(old.length){B=keep;BX=old.concat(BX.filter(function(x){return!old.some(function(o){return o.id===x.id})}));kvSet("bookings2",B)}
 }
-function holdLeft(b){if(b.accTs)return "รับแล้วโดย "+(b.accBy||"Production")+" · ไม่นับเวลา (ค้างจนเบอร์เข้า Excel)";if(stopped(b))return "เข้า Excel แล้ว · ไม่นับเวลา (รอ Production กดรับ)";if(!can("book"))return "รอ Production กดรับ";var m=Math.max(0,HOLD_MS-(Date.now()-b.id));var hr=Math.floor(m/3600000),mn=Math.floor(m%3600000/60000);return "เหลือ "+hr+" ชม. "+mn+" นาที"}
+function holdLeft(b){if(b.accTs)return "รับแล้วโดย "+(b.accBy||"Production")+" · ไม่นับเวลา (ค้างจนเบอร์เข้า Excel)";if(stopped(b))return "เข้าระบบแล้ว · (รอ Production กดรับ)";if(!can("book"))return "รอ Production กดรับ";var m=Math.max(0,HOLD_MS-(Date.now()-b.id));var hr=Math.floor(m/3600000),mn=Math.floor(m%3600000/60000);return "เหลือ "+hr+" ชม. "+mn+" นาที"}
 function reconcile(){B=B.concat(BX);BX=[];var before=B.slice();
   var m=S.map,sets={block:{},plate:{},mylar:{}};
   ["block","plate","mylar"].forEach(function(t){var col=m[t];if(col>=0)S.rows.forEach(function(r){parseNos(r[col]).forEach(function(p){sets[t][p.c+"|"+p.n]=1})})});
