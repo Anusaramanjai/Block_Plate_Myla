@@ -875,17 +875,18 @@ function detectReleases(prev){
   }catch(e){}
 }
 function markReleased(ids){
-  if(!can("release")){toast("เฉพาะ Production ที่กดปลดได้");return}
+  if(!can("release")){toast("ไม่มีสิทธิ์กดปลด");return}
   var hit=REL.filter(function(r){return ids.indexOf(r.id)>=0&&!r.doneAt});if(!hit.length)return;
   var now=Date.now();hit.forEach(function(r){r.doneBy=user;r.doneAt=now});kvSet("releases",REL);render();toast("บันทึก “ปลดแล้ว” "+hit.length+" เบอร์ โดย "+user);
   if(online())rq("POST","rpc/mark_released",{p_ids:hit.map(function(r){return r.id}),p_by:user}).catch(function(e){
     hit.forEach(function(r){r.doneBy="";r.doneAt=0});kvSet("releases",REL);render();
     toast(/PGRST202|mark_released|404/.test(String(e.status)+" "+e.message)?"ฐานข้อมูลยังไม่รองรับ · ให้ผู้ดูแลรัน release_migration.sql ก่อน":"บันทึกไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต")});
 }
+function relNo(r){return r.type==="block"&&r.sys!=="offset"?String(r.no).replace(/^(\d)-/,"0$1-"):r.no}
 function relRoom(r){try{if(r.sys==="offset"&&(r.type==="block"||r.type==="mylar")){var q=capNos(r.no,r.type)[0];return q?roomOf(r.type,q.n):""}var p=parseBn(r.no);return p?roomOf(r.type,p.c):""}catch(e){return""}}
 function relDayRows(){return REL.filter(function(r){return r.sys===S.sys&&r.day===S.relDay})}
-function relView(){return relDayRows().filter(function(r){return(!S.relType||r.type===S.relType)&&(S.relSt==="done"?r.doneAt:S.relSt==="todo"?!r.doneAt:true)}).sort(function(a,b){return a.type===b.type?(a.no>b.no?1:a.no<b.no?-1:0):(a.type>b.type?1:-1)})}
-function relCells(r,i){return[i+1,tn(r.type,r.sys),r.no,relRoom(r),r.code,r.cust,r.prod,r.mat,r.mach,r.doneAt?"ปลดแล้ว":"รอปลด",r.doneAt?r.doneBy:"",r.doneAt?new Date(r.doneAt).toLocaleString("th-TH"):""]}
+function relView(){return relDayRows().filter(function(r){return(!S.relType||r.type===S.relType)&&(S.relSt==="done"?r.doneAt:S.relSt==="todo"?!r.doneAt:true)}).sort(function(a,b){return a.type===b.type?(relNo(a)>relNo(b)?1:relNo(a)<relNo(b)?-1:0):(a.type>b.type?1:-1)})}
+function relCells(r,i){return[i+1,tn(r.type,r.sys),relNo(r),relRoom(r),r.code,r.cust,r.prod,r.mat,r.mach,r.doneAt?"ปลดแล้ว":"รอปลด",r.doneAt?r.doneBy:"",r.doneAt?new Date(r.doneAt).toLocaleString("th-TH"):""]}
 var REL_H=["ลำดับ","ประเภท","เบอร์","ห้อง","Cust-Code","ชื่อลูกค้า","PC","Material","Machine","สถานะ","ปลดโดย","เวลาที่ปลด"];
 function relUI(){
   var b=$("relBody"),all=REL.filter(function(r){return r.sys===S.sys});
@@ -895,10 +896,10 @@ function relUI(){
     all=all.filter(function(r){return ymOK($("ry"),$("rm"),+r.day.slice(4),+r.day.slice(2,4))});
     var qw=$("rq").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     if(qw.length){
-      var hit=all.filter(function(r){var t=[r.no,r.code,r.cust,r.prod,r.mat,r.mach,r.doneBy,r.day,tn(r.type,r.sys)].join(" ").toLowerCase();return qw.every(function(w){return t.indexOf(w)>=0})}).sort(function(x,y){return(y.doneAt||y.at||0)-(x.doneAt||x.at||0)});
+      var hit=all.filter(function(r){var t=[r.no,relNo(r),r.code,r.cust,r.prod,r.mat,r.mach,r.doneBy,r.day,tn(r.type,r.sys)].join(" ").toLowerCase();return qw.every(function(w){return t.indexOf(w)>=0})}).sort(function(x,y){return(y.doneAt||y.at||0)-(x.doneAt||x.at||0)});
       var fd=function(t){return t?new Date(t).toLocaleDateString("th-TH",{day:"numeric",month:"long",year:"numeric"}):"-"};
       $("relHead").textContent="ปลดจากวางแผน · "+SY[S.sys].n+" · ผลค้นหา "+hit.length+" รายการ";
-      b.innerHTML=hit.length?'<div class="tw" style="max-height:560px"><table><thead><tr><th>เบอร์</th><th>ประเภท</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>สถานะ</th><th>ปลดเมื่อ</th><th>ปลดโดย</th><th>พบว่าหายจาก Excel</th></tr></thead><tbody>'+hit.slice(0,500).map(function(r){return"<tr><td><b>"+esc(r.no)+"</b></td><td>"+esc(tn(r.type,r.sys))+"</td><td>"+esc(r.code)+"</td><td>"+esc(r.cust)+"</td><td>"+esc(r.prod)+"</td><td>"+esc(r.mat)+"</td><td>"+(r.doneAt?'<span class="st used">ปลดแล้ว</span>':'<span class="st hold">รอปลด</span>')+"</td><td><b>"+esc(r.doneAt?fd(r.doneAt):"-")+"</b></td><td>"+esc(r.doneBy||"")+"</td><td>"+esc(fd(r.at))+" <small>("+esc(r.day)+")</small></td></tr>"}).join("")+"</tbody></table></div>":'<div class="empty">ไม่พบรายการที่ค้นหา</div>';
+      b.innerHTML=hit.length?'<div class="tw" style="max-height:560px"><table><thead><tr><th>เบอร์</th><th>ประเภท</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>สถานะ</th><th>ปลดเมื่อ</th><th>ปลดโดย</th><th>พบว่าหายจาก Excel</th></tr></thead><tbody>'+hit.slice(0,500).map(function(r){return"<tr><td><b>"+esc(relNo(r))+"</b></td><td>"+esc(tn(r.type,r.sys))+"</td><td>"+esc(r.code)+"</td><td>"+esc(r.cust)+"</td><td>"+esc(r.prod)+"</td><td>"+esc(r.mat)+"</td><td>"+(r.doneAt?'<span class="st used">ปลดแล้ว</span>':'<span class="st hold">รอปลด</span>')+"</td><td><b>"+esc(r.doneAt?fd(r.doneAt):"-")+"</b></td><td>"+esc(r.doneBy||"")+"</td><td>"+esc(fd(r.at))+" <small>("+esc(r.day)+")</small></td></tr>"}).join("")+"</tbody></table></div>":'<div class="empty">ไม่พบรายการที่ค้นหา</div>';
       return;
     }
   }
@@ -917,8 +918,8 @@ function relUI(){
   b.innerHTML='<div class="relbar"><button class="btn l" data-ra="back">← วันที่ทั้งหมด</button><b style="font-size:20px">'+esc(S.relDay)+'</b><span class="sp"></span>'+
     sel("type",S.relType,[["","ทุกประเภท"],["block",tn("block",S.sys)],["plate",tn("plate",S.sys)],["mylar",tn("mylar",S.sys)]])+sel("st",S.relSt,[["","ทุกสถานะ"],["todo","รอปลด"],["done","ปลดแล้ว"]])+'</div>'+
     '<div class="stats" style="margin-bottom:10px"><span>ทั้งหมด <b>'+tot.length+'</b></span><span>ปลดแล้ว <b>'+dn+'</b></span><span>รอปลด <b>'+(tot.length-dn)+'</b></span><span>แสดงอยู่ <b>'+rows.length+'</b></span></div>'+
-    '<div class="relbar">'+(pr?'<button class="btn c" data-ra="all">ปลดแล้วทั้งหมดที่แสดง</button>':"")+'<button class="btn l" data-ra="xls">ดาวน์โหลด Excel</button><button class="btn l" data-ra="pdf">ดาวน์โหลด PDF</button></div>'+
-    (rows.length?'<div class="tw" style="max-height:520px"><table><thead><tr>'+REL_H.slice(0,9).map(function(h){return"<th>"+h+"</th>"}).join("")+"<th>สถานะ</th><th></th></tr></thead><tbody>"+rows.map(function(r,i){var c=relCells(r,i);return"<tr>"+c.slice(0,9).map(function(x,j){return"<td>"+(j===2?"<b>"+esc(x)+"</b>":esc(x))+"</td>"}).join("")+"<td>"+(r.doneAt?'<span class="st used">ปลดแล้ว</span> '+esc(r.doneBy)+" · "+esc(c[11]):'<span class="st hold">รอปลด</span>')+"</td><td>"+(!r.doneAt&&pr?'<button class="btn c" data-rel="'+esc(r.id)+'" style="padding:3px 10px;font-size:12px">ปลดแล้ว</button>':"")+"</td></tr>"}).join("")+"</tbody></table></div>":'<div class="empty">ไม่พบรายการตามตัวกรอง</div>');
+    '<div class="relbar">'+(pr?'<button class="btn c" data-ra="all"'+(rows.some(function(x){return!x.doneAt})?"":" disabled")+'>✔ ปลดทั้งหมด ('+rows.filter(function(x){return!x.doneAt}).length+" รายการ)</button>":"")+'<button class="btn l" data-ra="xls">ดาวน์โหลด Excel</button><button class="btn l" data-ra="pdf">ดาวน์โหลด PDF</button></div>'+
+    (rows.length?'<div class="tw" style="max-height:520px"><table><thead><tr>'+REL_H.slice(0,9).map(function(h){return"<th>"+h+"</th>"}).join("")+"<th>สถานะ</th><th></th></tr></thead><tbody>"+rows.map(function(r,i){var c=relCells(r,i);return"<tr>"+c.slice(0,9).map(function(x,j){return"<td>"+(j===2?"<b>"+esc(x)+"</b>":esc(x))+"</td>"}).join("")+"<td>"+(r.doneAt?'<span class="st used">ปลดแล้ว</span> '+esc(r.doneBy)+" · "+esc(c[11]):'<span class="st hold">รอปลด</span>')+"</td><td>"+(!r.doneAt&&pr?'<button class="btn c" data-rel="'+esc(r.id)+'" style="padding:5px 14px;font-size:14px;white-space:nowrap">✔ ปลดแล้ว</button>':"")+"</td></tr>"}).join("")+"</tbody></table></div>":(S.relSt==="todo"&&dn?'<div class="empty">ปลดครบทุกรายการแล้ว<br><br><button class="btn c" data-ra="showdone">ดูรายการที่ปลดแล้ว ›</button></div>':'<div class="empty">ไม่พบรายการตามตัวกรอง</div>'));
 }
 function relXls(){
   var rows=relView();if(!rows.length){toast("ไม่มีรายการให้ดาวน์โหลด");return}
@@ -939,6 +940,7 @@ $("relBody").addEventListener("click",function(e){
   var r=e.target.closest("[data-rel]");if(r){markReleased([r.dataset.rel]);return}
   var a=e.target.closest("[data-ra]");if(!a)return;var k=a.dataset.ra;
   if(k==="back"){S.relDay="";render()}
+  else if(k==="showdone"){S.relSt="done";render()}
   else if(k==="all"){var v=relView().filter(function(x){return!x.doneAt});if(!v.length){toast("ไม่มีรายการรอปลดในรายการที่แสดง");return}if(confirm("บันทึกว่า “ปลดแล้ว” "+v.length+" เบอร์ ?"))markReleased(v.map(function(x){return x.id}))}
   else if(k==="xls")relXls();else if(k==="pdf")relPdf();
 });
@@ -946,7 +948,7 @@ $("relBody").addEventListener("change",function(e){var f=e.target.dataset.f;if(f
 
 /* ---------- roles ---------- */
 var ROLES={
-  scheduling:{label:"Scheduling",users:["Pimjai","Anusara","Sakonl","Urai"],systems:["flexo","offset"],can:{book:1,cancelAny:1,flags:1,upload:1}},
+  scheduling:{label:"Scheduling",users:["Pimjai","Anusara","Sakonl","Urai"],systems:["flexo","offset"],can:{book:1,cancelAny:1,flags:1,upload:1,release:1}},
   converting:{label:"Production · Converting",users:["Khathawut","Suchat","Uthai"],systems:["flexo"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1,release:1}},
   offset:{label:"Production · Offset",users:["Parsong","Chalearmchai","Terapong"],systems:["offset"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1,release:1}}
 };
