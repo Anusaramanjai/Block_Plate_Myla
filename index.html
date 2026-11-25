@@ -207,7 +207,8 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
       <div><label>สถานะ</label><select id="dbSt"><option value="">ทั้งหมด</option><option value="free">ว่าง</option><option value="used">ใช้งานจริง (จาก Excel)</option><option value="hold">จองรอเข้าระบบ</option><option value="closed">ปิดใช้งาน</option></select></div>
       <div><label>ค้นหา (เบอร์ / ลูกค้า / PC / หมายเหตุ)</label><input id="dbQ" autocomplete="off"></div>
      </div>
-     <div class="tw" id="dbSum" style="margin-top:14px;max-height:300px"></div>
+     <div class="stats" id="dbTot" style="margin-top:14px"></div>
+     <div class="tw" id="dbSum" style="margin-top:10px;max-height:300px"></div>
      <div class="tw" id="dbTab" style="margin-top:14px"></div>
      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn l" id="dbCsv">ส่งออก CSV ทุกเบอร์</button><span style="color:var(--mute);font-size:13px">สถานะ “ใช้งานจริง” มาจากไฟล์ Excel · “จองรอเข้าระบบ” จะหายเองเมื่อเบอร์นั้นอยู่ใน Excel หลัง Update Data หรือเมื่อค้างเกิน 1 วัน (คืนเป็นช่องว่าง)</span></div>
     </div>
@@ -724,10 +725,11 @@ function dbUI(){
   var cnt={},tot={n:0,free:0,used:0,hold:0,closed:0};
   all.forEach(function(r){var s=cnt[r.c]||(cnt[r.c]={n:0,free:0,used:0,hold:0,closed:0});s.n++;s[r.st]++;tot.n++;tot[r.st]++});
   var hasData=S.rows.length>0&&S.map[t]>=0;
-  var sm='<table><thead><tr><th>ชั้น</th><th>ห้อง</th><th>ทั้งหมด</th><th>ใช้งานจริง</th><th>จองรอเข้าระบบ</th><th>ปิดใช้งาน</th><th>ว่าง</th><th>เต็ม</th></tr></thead><tbody>';
+  var sm='<table><thead><tr><th>ชั้น</th><th>ห้อง</th><th>ทั้งหมด</th><th>ใช้งานจริง</th><th>จองรอเข้าระบบ</th><th>ปิดใช้งาน</th><th>ว่าง</th><th>ใช้งานแล้ว</th></tr></thead><tbody>';
   var line=function(lbl,room,s,a){return "<tr"+(a?' data-sh="'+lbl+'"':"")+"><td><b>"+(a?shl(t,lbl):lbl)+"</b></td><td>"+room+"</td><td>"+s.n+"</td><td>"+s.used+"</td><td>"+s.hold+"</td><td>"+s.closed+"</td><td>"+s.free+"</td><td>"+Math.round((s.n-s.free)*100/(s.n||1))+"%</td></tr>"};
   shs.forEach(function(c){sm+=line(c,roomOf(t,c),cnt[c],true)});
-  sm+=line("รวม","",tot,false)+"</tbody></table>";
+  sm+="</tbody></table>";
+  $("dbTot").innerHTML="<span>รวม <b>"+tn(t,S.sys)+"</b></span><span>ทั้งหมด <b>"+tot.n.toLocaleString()+"</b></span><span>ใช้งานจริง <b>"+tot.used.toLocaleString()+"</b></span><span>จองรอเข้าระบบ <b>"+tot.hold.toLocaleString()+"</b></span><span>ปิดใช้งาน <b>"+tot.closed.toLocaleString()+"</b></span><span>ว่าง <b>"+tot.free.toLocaleString()+"</b></span><span>ใช้งานแล้ว <b>"+Math.round((tot.n-tot.free)*100/(tot.n||1))+"%</b></span>";
   $("dbSum").innerHTML=(hasData?"":'<div class="empty" style="padding:10px">ยังไม่ได้โหลดไฟล์ Excel (หรือยังไม่ได้จับคอลัมน์เบอร์) · ทุกเบอร์จึงแสดงเป็นว่างไว้ก่อน</div>')+sm;
   var sh=$("dbShelf").value,st=$("dbSt").value,q=$("dbQ").value.trim().toLowerCase();
   var rs=all.filter(function(r){
