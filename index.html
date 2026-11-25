@@ -284,7 +284,7 @@ function groupRows(){
   });
   var out=[];order.forEach(function(g){(g.keep.length?g.keep:[g.first]).forEach(function(r){out.push(r)})});S.rows=out;
 }
-function done(save){if(save){autoMap();groupRows();kvSet("data",{h:S.headers,r:S.rows,n:S.name,t:S.fileTime,v:S.remoteVer});kvSet("map2",S.map)}mapUI();stats();if(save)reconcile();render();if(save&&online()&&can("upload"))pushSnapshot()}
+function done(save){if(save){autoMap();groupRows();kvSet("data",{h:S.headers,r:S.rows,n:S.name,t:S.fileTime,v:S.remoteVer});kvSet("map2",S.map)}mapUI();stats();if(save){freezeSnaps();reconcile()}render();if(save&&online()&&can("upload"))pushSnapshot()}
 function loadBuf(buf,name,mod){
   try{var wb=XLSX.read(new Uint8Array(buf),{type:"array"});S.name=name;S.fileTime=mod||Date.now();var ps=can("upload")&&S.rows.length?relSnap(S.rows,S.map):null;parse(wb);done(true);toast("อัปเดตข้อมูลแล้ว "+S.rows.length.toLocaleString()+" แถว");if(ps)detectReleases(ps)}
   catch(e){toast("อ่านไฟล์ไม่ได้ ลองเลือกไฟล์ .xlsx อีกครั้ง")}
@@ -787,7 +787,7 @@ function acceptHold(id){
     var inf=bkInfo(bk);
     if(!inf&&!confirm("ยังไม่พบข้อมูลลูกค้า / PC ของเบอร์ "+bk.no+" ใน Excel ล่าสุด\n(Scheduling อาจยังไม่ได้คีย์ข้อมูล หรือยังไม่ได้ Update Data)\n\nตกลง = รับไปก่อน (หยุดนับเวลา ค้างจนเบอร์เข้า Excel และข้อมูลจะขึ้นเองเมื่อ Scheduling Update Data)\nยกเลิก = รอข้อมูลก่อน"))return;
     bk.accBy=user;bk.accTs=Date.now();BX=BX.filter(function(x){return x!==bk});
-    var lg={id:String(bk.id),sys:bk.sys,type:bk.type,no:bk.no,room:bk.room||"",by:bk.by||"",at:bk.at||"",accBy:user,accTs:bk.accTs,u:1};ALG=[lg].concat(ALG.filter(function(x){return x.id!==lg.id})).slice(0,3000);kvSet("acclog",ALG);if(online())pushLog([lg]);
+    var lg={id:String(bk.id),sys:bk.sys,type:bk.type,no:bk.no,room:bk.room||"",by:bk.by||"",at:bk.at||"",accBy:user,accTs:bk.accTs,u:1,snap:inf?snapOf(inf):null,su:inf?1:0};ALG=[lg].concat(ALG.filter(function(x){return x.id!==lg.id})).slice(0,3000);kvSet("acclog",ALG);if(online()){pushLog([lg]);if(lg.snap)pushSnap([lg])}
     if(inf){B=B.filter(function(x){return x!==bk});kvSet("bookings2",B);render();toast("รับเบอร์ "+bk.no+" แล้ว"+((inf.cust||inf.prod)?" · "+(inf.cust||"")+" "+(inf.prod||""):""));if(online())delHold(bk.id).catch(function(){netErr()});return}
     if(B.indexOf(bk)<0)B.unshift(bk);kvSet("bookings2",B);render();toast("รับเบอร์ "+bk.no+" แล้ว · หยุดนับเวลา ค้างจนเบอร์เข้า Excel");
     if(online())rq("POST","rpc/accept_hold",{p_id:bk.id,p_by:user}).catch(function(e){
@@ -801,6 +801,14 @@ function trackDone(){
   var a=add[0];toast("เบอร์ "+a.b.no+" เข้า Excel แล้ว"+((a.i.cust||a.i.prod)?" · "+(a.i.cust||"")+" "+(a.i.prod||""):""));
 }
 var ALG=[];
+/* snapshot ข้อมูลลูกค้า/PC/Material ตอนรับ — คงไว้ ไม่เปลี่ยนตาม Excel ปัจจุบัน */
+function snapOf(i){return{code:i.code||"",cust:i.cust||"",prod:i.prod||"",mat:i.mat||"",mach:i.mach||"",at:Date.now()}}
+function pushSnap(list){return rq("POST","accept_snap?on_conflict=id",list.map(function(r){var s=r.snap;return{id:String(r.id),code:s.code,cust:s.cust,prod:s.prod,mat:s.mat,mach:s.mach,at:s.at||Date.now()}}),"resolution=ignore-duplicates,return=minimal").then(function(){list.forEach(function(r){delete r.su});kvSet("acclog",ALG)}).catch(function(){})}
+function freezeSnaps(){
+  var add=[];
+  ALG.forEach(function(r){if(r.snap)return;var i=bkInfo(r);if(!i||!(i.cust||i.prod||i.code||i.mat))return;r.snap=snapOf(i);r.su=1;add.push(r)});
+  if(add.length){kvSet("acclog",ALG);if(online())pushSnap(add)}
+}
 function toLog(r){return{id:r.id,sys:r.sys,type:r.type,no_text:r.no,room:r.room||"",booked_by:r.by||"",booked_at:r.at||"",accepted_by:r.accBy,accepted_ts:r.accTs}}
 function fromLog(x){return{id:String(x.id),sys:x.sys,type:x.type,no:x.no_text,room:x.room||"",by:x.booked_by||"",at:x.booked_at||"",accBy:x.accepted_by||"",accTs:+x.accepted_ts||0}}
 function pushLog(list){return rq("POST","rpc/log_accept",{p:list.map(toLog)}).then(function(){list.forEach(function(r){delete r.u});kvSet("acclog",ALG)}).catch(function(){})}
@@ -832,7 +840,7 @@ function histUI(){
   rows=rows.filter(function(r){var d=new Date(r.accTs);return ymOK($("hy"),$("hm"),d.getFullYear(),d.getMonth()+1)});
   var q=$("hq").value.trim().toLowerCase().split(/\s+/).filter(Boolean),out=[];
   rows.forEach(function(r){
-    var inf=bkInfo({type:r.type,sys:r.sys,no:r.no,nos:String(r.no).split(",")}),alive=B.some(function(b){return String(b.id)===r.id});
+    var inf=bkInfo({type:r.type,sys:r.sys,no:r.no,nos:String(r.no).split(",")}),alive=B.some(function(b){return String(b.id)===r.id});if(r.snap)inf=r.snap;
     var st=inf?["used","เข้า Excel แล้ว"]:alive?["hold","รอข้อมูลเข้า Excel"]:["closed","ยกเลิก / ไม่พบ"],i=inf||{};
     var txt=[r.no,r.accBy,r.by,r.room,i.cust,i.prod,i.code,i.mat].join(" ").toLowerCase();
     if(q.every(function(w){return txt.indexOf(w)>=0}))out.push({r:r,st:st,i:i});
@@ -1006,19 +1014,19 @@ function pullAll(){
   if(!online()||pulling)return Promise.resolve();
   pulling=true;
   return rq("POST","rpc/expire_holds",{}).catch(function(){}).then(function(){
-    return Promise.all([rq("GET","holds?select=*&order=id.desc"),rq("GET","slot_flags?select=*"),rq("GET","excel_snapshot?select=id,ver&id=eq.1"),rq("GET","releases?select=*&order=detected_at.desc&limit=5000").catch(function(){return null}),rq("GET","accept_log?select=*&order=accepted_ts.desc&limit=3000").catch(function(){return null})])
+    return Promise.all([rq("GET","holds?select=*&order=id.desc"),rq("GET","slot_flags?select=*"),rq("GET","excel_snapshot?select=id,ver&id=eq.1"),rq("GET","releases?select=*&order=detected_at.desc&limit=5000").catch(function(){return null}),rq("GET","accept_log?select=*&order=accepted_ts.desc&limit=3000").catch(function(){return null}),rq("GET","accept_snap?select=*&limit=5000").catch(function(){return null})])
   }).then(function(v){
     var wasOff=!netOK;netOK=true;
     PA=B.filter(function(b){return b.accTs&&b.accBy===user});B=v[0].map(fromR);BX=[];kvSet("bookings2",B);
     F={};v[1].forEach(function(f){F[f.key]={note:f.note||"",by:f.by_user||"",at:f.at_text||""}});kvSet("flags",F);
     if(v[3]){var srv=v[3].map(fromRel),loc=REL.filter(function(r){return r.u&&!srv.some(function(s){return s.id===r.id})});REL=srv.concat(loc);kvSet("releases",REL);if(loc.length&&can("upload"))pushRel(loc)}
-    if(v[4]){var ss=v[4].map(fromLog),ll=ALG.filter(function(r){return r.u&&!ss.some(function(s){return s.id===r.id})});ALG=ss.concat(ll);kvSet("acclog",ALG);if(ll.length)pushLog(ll)}
+    if(v[4]){var loc0={};ALG.forEach(function(r){if(r.snap)loc0[r.id]=r.snap});var sv={};(v[5]||[]).forEach(function(x){sv[x.id]={code:x.code||"",cust:x.cust||"",prod:x.prod||"",mat:x.mat||"",mach:x.mach||"",at:+x.at||0}});var ss=v[4].map(fromLog),ll=ALG.filter(function(r){return r.u&&!ss.some(function(s){return s.id===r.id})});ALG=ss.concat(ll);var up=[];ALG.forEach(function(r){if(sv[r.id])r.snap=sv[r.id];else if(loc0[r.id]&&!r.snap){r.snap=loc0[r.id];if(v[5])up.push(r)}});kvSet("acclog",ALG);if(ll.length)pushLog(ll);if(up.length)pushSnap(up)}
     var m=v[2][0];
     if(m&&+m.ver!==S.remoteVer)return rq("GET","excel_snapshot?select=*&id=eq.1").then(function(x){var r=x[0];
       S.headers=r.headers;S.rows=r.rows;S.name=r.name;S.fileTime=+r.file_time;S.remoteVer=+r.ver;
       autoMap();if(r.map){var am=S.map;S.map=r.map;FD.forEach(function(f){if(S.map[f[0]]===undefined)S.map[f[0]]=am[f[0]]})}
       kvSet("data",{h:S.headers,r:S.rows,n:S.name,t:S.fileTime,v:S.remoteVer});kvSet("map2",S.map);mapUI();stats()});
-  }).then(function(){pulling=false;trackDone();if(roleKey)whoUI();render()},function(e){pulling=false;netErr()});
+  }).then(function(){pulling=false;freezeSnaps();trackDone();if(roleKey)whoUI();render()},function(e){pulling=false;netErr()});
 }
 setInterval(function(){if(!document.hidden&&roleKey)pullAll()},30000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&roleKey)pullAll()});
