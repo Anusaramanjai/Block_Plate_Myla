@@ -266,7 +266,7 @@ var CFG=window.TCSB_CONFIG||{},SB={url:CFG.url||"",key:CFG.key||""};
 var $=function(i){return document.getElementById(i)};
 var TN={block:"Block",plate:"Plate",mylar:"Mylar"};
 var SY={flexo:{n:"Flexo",re:/flexo|เฟล็กโซ|เฟลกโซ/i},offset:{n:"Offset",re:/offset|ออฟเซ็ต|ออฟเซท|ออฟเซต/i}};
-var FD=[["custcode","Cust-Code",/cust(omer)?[\s_.\-]*(code|id|no)|รหัสลูกค้า/i],["cust","ชื่อลูกค้า",/ลูกค้า|cust/i],["prod","Product Code",/product|รหัส|^pc$/i],["mat","Material",/material|วัสดุ/i],["block","Block-No.",/block|บล็อก/i],["plate","Plate-No.",/plate|เพลท/i],["mylar","Mylar-No.",/mylar|myla|ไมล่า|ไมลาร์/i],["L","L",/^l$|leg|ยาว/i],["W","W",/^w$|wid|กว้าง/i],["H","H",/^h$|hig|สูง/i],["sys","Machine",/ระบบ|เครื่อง|machine|system/i]];
+var FD=[["custcode","Cust-Code",/cust(omer)?[\s_.\-]*(code|id|no)|รหัสลูกค้า/i],["cust","ชื่อลูกค้า",/ลูกค้า|cust/i],["prod","Product Code",/product|รหัส|^pc$/i],["mat","Material",/material|วัสดุ/i],["block","Block-No.",/block|บล็อก/i],["plate","Plate-No.",/plate|เพลท/i],["mylar","Mylar-No.",/mylar|myla|ไมล่า|ไมลาร์/i],["L","L",/^l$|leg|ยาว/i],["W","W",/^w$|wid|กว้าง/i],["H","H",/^h$|hig|สูง/i],["sys","Machine",/ระบบ|เครื่อง|machine|system/i],["rem","Remark",/remark|หมายเหตุ/i]];
 var S={headers:[],rows:[],name:"",fileTime:0,map:{},sys:"flexo",mode:"reg",btype:"",room:"",slot:"",cab:"",start:0,nos:[],cl:[],occ:{}},B=[],user="",handle=null;
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove("on")},3200)}
@@ -373,7 +373,7 @@ function render0(){
   document.querySelectorAll(".mode").forEach(function(e){e.classList.toggle("on",e.dataset.m===S.mode)});
   $("regBox").hidden=S.mode!=="reg";$("findBox").hidden=S.mode!=="find";$("dbBox").hidden=S.mode!=="db";$("relBox").hidden=S.mode!=="rel";$("histBox").hidden=S.mode!=="hist";regUI();syncNo();if(S.mode==="db")dbUI();if(S.mode==="rel")relUI();if(S.mode==="hist")histUI();
   var qn=toks("qNo"),qm=toks("qMat"),qp=toks("qPc"),qc=toks("qCc");
-  var m=S.map,pk=function(r,ks){var a=ks.filter(function(k){return m[k]>=0}).map(function(k){return r[m[k]]});return (a.length?a:r).join(" ")};
+  var m=S.map,pk=function(r,ks){var a=ks.filter(function(k){return m[k]>=0}).map(function(k){return r[m[k]]});if(S.sys==="offset"&&m.rem>=0){if(ks.indexOf("block")>=0)a.push(exNos(r,"block").map(function(q){return cp(q.n,q.p)}).join(" "));if(ks.indexOf("mylar")>=0)a.push(exNos(r,"mylar").map(function(q){return cp(q.n,q.p)}).join(" "))}return (a.length?a:r).join(" ")};
   var bs=B.filter(function(b){if(b.sys!==S.sys)return false;var o=bobj(b);return ok([o.block,o.plate,o.mylar].join(" "),qn)&&ok(o.mat,qm)&&ok(o.prod,qp)&&ok(o.custcode||"",qc)});
   var rs=rowsFor().filter(function(r){return ok(pk(r,["block","plate","mylar"]),qn)&&ok(pk(r,["mat"]),qm)&&ok(pk(r,["prod"]),qp)&&ok(pk(r,["custcode"]),qc)});
   var cols=["custcode","cust","prod","mat","sys","block","plate","mylar","L","W","H"].map(function(k){return FD.filter(function(f){return f[0]===k})[0]}),h="<table><thead><tr><th>ลำดับ</th>"+cols.map(function(c){return "<th>"+(c[0]==="block"&&off()?"Printing Plate-No.":c[1])+"</th>"}).join("")+"<th></th></tr></thead><tbody>",i=0;
@@ -459,11 +459,30 @@ function capNos(v,t){var out=[],R=OFC[t],re=/(?:^|\D)(\d{3})\s*[-\/]\s*(\d{1,2}(
 function capGrp(t,n){var R=OFC[t];for(var r in R)if(n>=R[r][0]&&n<=R[r][1])return R[r][0]+Math.floor((n-R[r][0])/50)*50;return 0}
 function capHi(t,g){var R=OFC[t];for(var r in R)if(g>=R[r][0]&&g<=R[r][1])return Math.min(+g+49,R[r][1]);return +g}
 function shl(t,c){return capMode(t)?"ช่วง "+c+"–"+capHi(t,+c):"ชั้น "+c}
+/* อ่านเบอร์ Printing plate / ไขทาบ ของอีกเครื่องที่เขียนไว้ใน Remark เช่น "KBA145 Printing plate No.543-03 ไขทาบ 208-02" */
+var RXC={};
+function remExtra(txt){
+  var k=String(txt||"");if(RXC[k])return RXC[k];
+  var o={block:[],mylar:[],mach:""};RXC[k]=o;
+  if(!/KBA|ไข|myla|ไมล่า|ไมลาร์|plate|printing|เพลท/i.test(k))return o;
+  var s=k.replace(/_x000D_/gi," ").replace(/[​\r\n\t]+/g," ").replace(/\s+/g," "),m;
+  var mm=/KBA\s*(\d{3})/i.exec(s);if(mm)o.mach="KBA"+mm[1];
+  var N="\\s*(?:no\\.?|number|เบอร์|เลขที่)?\\s*[=:#]?\\s*\\(?\\s*(\\d{3})\\s*[-–\\/]\\s*(\\d{1,2})(?!\\d)";
+  var rm=new RegExp("(?:ไขทาบ|ไข|ไมล่า|ไมลาร์|myla|mylar)"+N,"gi"),rp=new RegExp("(?:KBA\\s*\\d{3}|printing\\s*plate|plate|printing|เพลท)\\s*(?:printing\\s*plate|plate)?"+N,"gi");
+  while((m=rm.exec(s)))o.mylar.push(m[1]+"-"+m[2]);
+  while((m=rp.exec(s)))o.block.push(m[1]+"-"+m[2]);
+  return o;
+}
+function exNos(r,t,map){
+  var m=map||S.map;if(!(m.rem>=0)||!r)return [];
+  var e=remExtra(r[m.rem]),l=t==="block"?e.block:t==="mylar"?e.mylar:[];if(!l.length)return [];
+  return capNos(l.join(" ; "),t).map(function(q){return{n:q.n,p:q.p,mach:e.mach}});
+}
 function capOcc(t,x){
   var o={},col=S.map[t],m=S.map;
   var add=function(q,inf){var c=o[q.n]||(o[q.n]={});if(!c[q.p])c[q.p]=inf};
-  if(col>=0)rowsFor().forEach(function(r){var ns=capNos(r[col],t);if(!ns.length)return;var g=function(k){return m[k]>=0?r[m[k]]:""};
-    var inf={code:g("custcode"),cust:g("cust"),prod:g("prod"),mat:g("mat"),mach:g("sys")};ns.forEach(function(q){add(q,inf)})});
+  if(col>=0)rowsFor().forEach(function(r){var ns=capNos(r[col],t),ex=exNos(r,t);if(!ns.length&&!ex.length)return;var g=function(k){return m[k]>=0?r[m[k]]:""};
+    var inf={code:g("custcode"),cust:g("cust"),prod:g("prod"),mat:g("mat"),mach:g("sys")};ns.forEach(function(q){add(q,inf)});ex.forEach(function(q){add(q,{code:inf.code,cust:inf.cust,prod:inf.prod,mat:inf.mat,mach:q.mach||inf.mach})})});
   if(!x)B.forEach(function(b){if(b.type!==t||b.sys!=="offset")return;(b.nos||[]).forEach(function(y){capNos(y,t).forEach(function(q){add(q,{code:b.custcode||"",cust:b.cust,prod:b.prod,mat:b.mat,mach:"(จองในระบบ)",hold:true})})})});
   return o;
 }
@@ -691,7 +710,8 @@ document.querySelectorAll(".rbar .btn").forEach(function(b){b.onclick=function()
 
 
 /* ---------- number database page ---------- */
-var HOLD_MS=24*3600*1000;
+var HOLD_MS=24*3600*1000,HOLD_OFF=3*24*3600*1000;
+function holdMs(b){return b&&b.sys==="offset"?HOLD_OFF:HOLD_MS}
 var BX=[];
 var exCol=true;
 function stopped(b){return !!(b.inEx||(S.rows&&S.rows.length&&bkInfo(b)))}
@@ -704,17 +724,17 @@ function markInEx(){
 function expireHolds(){
   var now=Date.now(),keep=[],old=[];
   markInEx();
-  B.forEach(function(b){(b.type&&typeof b.id==="number"&&!b.accTs&&!stopped(b)&&now-b.id>HOLD_MS?old:keep).push(b)});
+  B.forEach(function(b){(b.type&&typeof b.id==="number"&&!b.accTs&&!stopped(b)&&now-b.id>holdMs(b)?old:keep).push(b)});
   if(old.length){B=keep;BX=old.concat(BX.filter(function(x){return!old.some(function(o){return o.id===x.id})}));kvSet("bookings2",B)}
 }
-function holdLeft(b){if(b.accTs)return "รับแล้วโดย "+(b.accBy||"Production")+" · ไม่นับเวลา (ค้างจนเบอร์เข้า Excel)";if(stopped(b))return "เข้าระบบแล้ว · (รอ Production กดรับ)";if(!can("book"))return "รอ Production กดรับ";var m=Math.max(0,HOLD_MS-(Date.now()-b.id));var hr=Math.floor(m/3600000),mn=Math.floor(m%3600000/60000);return "เหลือ "+hr+" ชม. "+mn+" นาที"}
+function holdLeft(b){if(b.accTs)return "รับแล้วโดย "+(b.accBy||"Production")+" · ไม่นับเวลา (ค้างจนเบอร์เข้า Excel)";if(stopped(b))return "เข้าระบบแล้ว · (รอ Production กดรับ)";if(!can("book"))return "รอ Production กดรับ";var m=Math.max(0,holdMs(b)-(Date.now()-b.id));var dy=Math.floor(m/86400000),hr=Math.floor(m%86400000/3600000),mn=Math.floor(m%3600000/60000);return "เหลือ "+(dy?dy+" วัน ":"")+hr+" ชม. "+mn+" นาที"}
 function reconcile(){B=B.concat(BX);BX=[];var before=B.slice();
   var m=S.map,sets={block:{},plate:{},mylar:{}};
   ["block","plate","mylar"].forEach(function(t){var col=m[t];if(col>=0)S.rows.forEach(function(r){parseNos(r[col]).forEach(function(p){sets[t][p.c+"|"+p.n]=1})})});
   var keep=[],n=0;
   B.forEach(function(b){
     if(b.sys==="offset"&&(b.type==="block"||b.type==="mylar")){var cc=m[b.type],pn=(b.nos||[])[0];
-      if(b.accTs&&cc>=0&&S.rows.some(function(r){return capNos(r[cc],b.type).some(function(q){return cp(q.n,q.p)===pn})}))n++;else keep.push(b);return}
+      if(b.accTs&&cc>=0&&S.rows.some(function(r){return capNos(r[cc],b.type).concat(exNos(r,b.type)).some(function(q){return cp(q.n,q.p)===pn})}))n++;else keep.push(b);return}
     var s=sets[b.type],ns=(b.nos||[]).map(parseBn);
     if(b.accTs&&s&&ns.length&&ns.every(function(q){return q&&s[q.c+"|"+q.n]}))n++;else keep.push(b)});
   if(n){before.filter(function(b){return keep.indexOf(b)<0}).forEach(function(g){if(online())delHold(g.id).catch(function(){})});B=keep;kvSet("bookings2",B);toast(n+" รายการจองเข้าระบบแล้ว · ล้างออกจากรายการจองอัตโนมัติ")}
@@ -797,7 +817,7 @@ var AD=[],PA=[];
 function accBtn(b){return can("accept")&&!b.accTs?'<button class="btn c" data-acc="'+b.id+'" style="padding:3px 10px;font-size:12px;margin-right:4px">กดรับ</button>':""}
 function bkInfo(b){
   var m=S.map,t=b.type,col=m[t];if(!(col>=0))return null;var nos=b.nos||[b.no],hit=null;
-  if(b.sys==="offset"&&(t==="block"||t==="mylar")){S.rows.some(function(r){if(capNos(r[col],t).some(function(q){return cp(q.n,q.p)===nos[0]})){hit=r;return true}})}
+  if(b.sys==="offset"&&(t==="block"||t==="mylar")){S.rows.some(function(r){if(capNos(r[col],t).concat(exNos(r,t)).some(function(q){return cp(q.n,q.p)===nos[0]})){hit=r;return true}})}
   else{var w=nos.map(parseBn).filter(Boolean).map(function(q){return q.c+"|"+q.n});S.rows.some(function(r){if(parseNos(r[col]).some(function(p){return w.indexOf(p.c+"|"+p.n)>=0})){hit=r;return true}})}
   if(!hit)return null;var g=function(k){return m[k]>=0?hit[m[k]]:""};
   return{code:g("custcode"),cust:g("cust"),prod:g("prod"),mat:g("mat"),mach:g("sys")};
@@ -887,10 +907,11 @@ function relSnap(rows,map){
   var out={};
   ["block","plate","mylar"].forEach(function(t){var col=map[t];if(!(col>=0))return;
     rows.forEach(function(r){var mach=map.sys>=0?r[map.sys]:"",sys=OFFRE.test(mach)?"offset":"flexo",nums=[];
-      if(sys==="offset"&&(t==="block"||t==="mylar"))capNos(r[col],t).forEach(function(q){nums.push(cp(q.n,q.p))});
+      var em={};
+      if(sys==="offset"&&(t==="block"||t==="mylar")){capNos(r[col],t).forEach(function(q){nums.push(cp(q.n,q.p))});exNos(r,t,map).forEach(function(q){var c=cp(q.n,q.p);if(nums.indexOf(c)<0){nums.push(c);em[c]=q.mach}})}
       else parseNos(r[col]).forEach(function(q){nums.push(sid(t,q.c,q.n))});
       var g=function(k){return map[k]>=0?r[map[k]]:""};
-      nums.forEach(function(no){out[t+"|"+sys+"|"+no]={type:t,sys:sys,no:no,code:g("custcode"),cust:g("cust"),prod:g("prod"),mat:g("mat"),mach:g("sys")}})})});
+      nums.forEach(function(no){out[t+"|"+sys+"|"+no]={type:t,sys:sys,no:no,code:g("custcode"),cust:g("cust"),prod:g("prod"),mat:g("mat"),mach:em[no]||g("sys")}})})});
   return out;
 }
 function pushRel(list){
