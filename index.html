@@ -1014,7 +1014,7 @@ function can(k){var r=ROLES[roleKey];return !!(r&&r.can[k])}
 function curRole(){return $("uRole").value==="scheduling"?"scheduling":$("uDiv").value}
 function loginUsers(sel){
   $("uDivW").hidden=$("uRole").value==="scheduling";$("uPwW").hidden=$("uRole").value!=="scheduling";$("uPw").value="";
-  var us=ROLES[curRole()].users;
+  var us=ROLES[curRole()].users.slice();if(curRole()!=="scheduling"&&typeof SYSX!=="undefined"&&SYSX)Object.keys(SYSX).forEach(function(n){if(us.indexOf(n)<0)us.push(n)});
   $("uName").innerHTML=us.map(function(n){return '<option value="'+n+'"'+(n===sel?" selected":"")+">"+n+"</option>"}).join("");
 }
 function loginFill(){
