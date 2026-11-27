@@ -373,13 +373,24 @@ function render0(){
   document.querySelectorAll(".mode").forEach(function(e){e.classList.toggle("on",e.dataset.m===S.mode)});
   $("regBox").hidden=S.mode!=="reg";$("findBox").hidden=S.mode!=="find";$("dbBox").hidden=S.mode!=="db";$("relBox").hidden=S.mode!=="rel";$("histBox").hidden=S.mode!=="hist";regUI();syncNo();if(S.mode==="db")dbUI();if(S.mode==="rel")relUI();if(S.mode==="hist")histUI();
   var qn=toks("qNo"),qm=toks("qMat"),qp=toks("qPc"),qc=toks("qCc");
-  var m=S.map,pk=function(r,ks){var a=ks.filter(function(k){return m[k]>=0}).map(function(k){return r[m[k]]});if(S.sys==="offset"&&m.rem>=0){if(ks.indexOf("block")>=0)a.push(exNos(r,"block").map(function(q){return cp(q.n,q.p)}).join(" "));if(ks.indexOf("mylar")>=0)a.push(exNos(r,"mylar").map(function(q){return cp(q.n,q.p)}).join(" "))}return (a.length?a:r).join(" ")};
   var bs=B.filter(function(b){if(b.sys!==S.sys)return false;var o=bobj(b);return ok([o.block,o.plate,o.mylar].join(" "),qn)&&ok(o.mat,qm)&&ok(o.prod,qp)&&ok(o.custcode||"",qc)});
-  var rs=rowsFor().filter(function(r){return ok(pk(r,["block","plate","mylar"]),qn)&&ok(pk(r,["mat"]),qm)&&ok(pk(r,["prod"]),qp)&&ok(pk(r,["custcode"]),qc)});
+  var ents=[];
+  rowsFor().forEach(function(r){
+    var o=obj(r);ents.push({r:r,o:o});
+    if(S.sys==="offset"&&S.map.rem>=0){
+      var eb=exNos(r,"block"),em=exNos(r,"mylar");if(!eb.length&&!em.length)return;
+      var sb=String(o.block||"").replace(/\s/g,""),sm=String(o.mylar||"").replace(/\s/g,"");
+      var b2=eb.map(function(q){return cp(q.n,q.p)});var m2=em.map(function(q){return cp(q.n,q.p)});
+      if(b2.every(function(x){return x===sb})&&m2.every(function(x){return x===sm}))return;
+      var o2={};for(var k in o)o2[k]=o[k];
+      o2.sys=(eb[0]&&eb[0].mach)||(em[0]&&em[0].mach)||o.sys;o2.block=b2.join(" , ");o2.plate="";o2.mylar=m2.join(" , ");
+      ents.push({r:r,o:o2,x:1})}
+  });
+  var rs=ents.filter(function(e){var o=e.o;return ok([o.block,o.plate,o.mylar].join(" "),qn)&&ok(o.mat,qm)&&ok(o.prod,qp)&&ok(o.custcode||"",qc)});
   var cols=["custcode","cust","prod","mat","sys","block","plate","mylar","L","W","H"].map(function(k){return FD.filter(function(f){return f[0]===k})[0]}),h="<table><thead><tr><th>ลำดับ</th>"+cols.map(function(c){return "<th>"+(c[0]==="block"&&off()?"Printing Plate-No.":c[1])+"</th>"}).join("")+"<th></th></tr></thead><tbody>",i=0;
   var line=function(o,first,last){return "<tr><td>"+first+"</td>"+cols.map(function(c){return "<td>"+esc(o[c[0]])+"</td>"}).join("")+"<td>"+last+"</td></tr>"};
   bs.forEach(function(b){h+=line(bobj(b),(b.accTs?'<span class="tag" style="background:#1d9e5a">รับแล้ว</span>':bkInfo(b)?'<span class="tag" style="background:#1ea0cf">เข้า Excel · รอรับ</span>':'<span class="tag">จอง</span>')+(b.room?' <small>'+esc(b.room)+(b.slot?' · '+esc(b.slot):'')+'</small>':''),accBtn(b)+'<button class="btn l" data-x="'+b.id+'" style="padding:3px 10px;font-size:12px">ยกเลิก</button>')});
-  rs.slice(0,300).forEach(function(r){h+=line(obj(r),++i,"")});
+  rs.slice(0,300).forEach(function(e){h+=line(e.o,++i,e.x?'<span class="tag" style="background:#6b4fbb">เบอร์อีกเครื่อง (Remark)</span>':"")});
   $("cnt").textContent=(rs.length+bs.length).toLocaleString()+" รายการ";
   $("res").innerHTML=(rs.length||bs.length)?h+"</tbody></table>"+(rs.length>300?'<div class="empty">แสดง 300 จาก '+rs.length.toLocaleString()+" แถว · พิมพ์ค้นหาเพื่อกรองเพิ่ม</div>":""):'<div class="empty">'+(S.rows.length?"ไม่พบข้อมูลที่ตรงกับคำค้น":"โหลดไฟล์ Excel เพื่อค้นหา")+"</div>";
 }
