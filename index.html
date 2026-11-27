@@ -390,7 +390,7 @@ function render0(){
   var cols=["custcode","cust","prod","mat","sys","block","plate","mylar","L","W","H"].map(function(k){return FD.filter(function(f){return f[0]===k})[0]}),h="<table><thead><tr><th>ลำดับ</th>"+cols.map(function(c){return "<th>"+(c[0]==="block"&&off()?"Printing Plate-No.":c[1])+"</th>"}).join("")+"<th></th></tr></thead><tbody>",i=0;
   var line=function(o,first,last){return "<tr><td>"+first+"</td>"+cols.map(function(c){return "<td>"+esc(o[c[0]])+"</td>"}).join("")+"<td>"+last+"</td></tr>"};
   bs.forEach(function(b){h+=line(bobj(b),(b.accTs?'<span class="tag" style="background:#1d9e5a">รับแล้ว</span>':bkInfo(b)?'<span class="tag" style="background:#1ea0cf">เข้า Excel · รอรับ</span>':'<span class="tag">จอง</span>')+(b.room?' <small>'+esc(b.room)+(b.slot?' · '+esc(b.slot):'')+'</small>':''),accBtn(b)+'<button class="btn l" data-x="'+b.id+'" style="padding:3px 10px;font-size:12px">ยกเลิก</button>')});
-  rs.slice(0,300).forEach(function(e){h+=line(e.o,++i,e.x?'<span class="tag" style="background:#6b4fbb">เบอร์อีกเครื่อง (Remark)</span>':"")});
+  rs.slice(0,300).forEach(function(e){h+=line(e.o,++i,e.x?'<span class="tag" style="background:#6b4fbb">พิมพ์ 2 เครื่อง อ่านจาก (Remark)</span>':"")});
   $("cnt").textContent=(rs.length+bs.length).toLocaleString()+" รายการ";
   $("res").innerHTML=(rs.length||bs.length)?h+"</tbody></table>"+(rs.length>300?'<div class="empty">แสดง 300 จาก '+rs.length.toLocaleString()+" แถว · พิมพ์ค้นหาเพื่อกรองเพิ่ม</div>":""):'<div class="empty">'+(S.rows.length?"ไม่พบข้อมูลที่ตรงกับคำค้น":"โหลดไฟล์ Excel เพื่อค้นหา")+"</div>";
 }
