@@ -422,7 +422,7 @@ $("uPw").addEventListener("keydown",function(e){if(e.key==="Enter")$("uOk").clic
 $("uOk").onclick=function(){var n=$("uName").value;if(!n){toast("กรุณาเลือกผู้ใช้งาน");return}
   if(curRole()==="scheduling"&&$("uPw").value!=="1234"){toast("รหัสผ่านไม่ถูกต้อง");$("uPw").value="";$("uPw").focus();return}
   roleKey=curRole();user=n;kvSet("user",n);kvSet("session",{role:roleKey,name:n});$("dlg").close();$("land").hidden=true;$("app").hidden=false;$("pick").hidden=false;$("detail").hidden=true;whoUI();
-  var sy=ROLES[roleKey].systems;if(sy.length===1)open(sy[0]);else render();
+  var sy=sysOf();if(sy.length===1)open(sy[0]);else render();
   pullAll()};
 $("btnOut").onclick=function(){$("app").hidden=true;$("land").hidden=false;roleKey=""};
 $("btnPick").onclick=pick;$("btnUpdate").onclick=function(){if(!handle)return pick();confirmRefresh()};
@@ -865,7 +865,7 @@ function accUI(){
   var show=!$("detail").hidden&&(can("accept")||pend.length>0);box.hidden=!show;if(!show)return;
   box.style.borderColor=pend.length?"var(--yel)":"";
   $("accHead").textContent=(off()?"Printing Plate":"Block")+" / Plate Die-cut / Mylar รอรับ ("+pend.length+")";
-  $("accTab").innerHTML=pend.length?(prod?'<div class="empty" style="padding:8px 12px;text-align:left">ตรวจสอบ Cust-Code / ชื่อลูกค้า / PC / Material ให้ตรงกับข้อมูลที่ได้รับก่อนกดรับ · ข้อมูลดึงจาก Excel อัตโนมัติทุก 30 วินาที</div>':"")+'<table><thead><tr><th>จองเมื่อ</th><th>ประเภท</th><th>เบอร์</th><th>ห้อง</th><th>ผู้จอง</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>Machine</th><th>'+(prod?"ค้างมา":"เวลาที่เหลือ")+'</th><th></th></tr></thead><tbody>'+pend.map(function(b){var i=bkInfo(b);return"<tr><td>"+esc(b.at||"")+"</td><td>"+esc(tn(b.type,b.sys))+"</td><td><b>"+esc(b.no)+"</b></td><td>"+esc(b.room||"")+"</td><td>"+esc(b.by||"")+"</td>"+(i?"<td>"+esc(i.code||"")+"</td><td>"+esc(i.cust||"")+"</td><td>"+esc(i.prod||"")+"</td><td>"+esc(i.mat||"")+"</td><td><b>"+esc(i.mach||"")+"</b></td>":'<td colspan="5" style="color:var(--mute)">รอข้อมูลจาก Excel (Scheduling ยังไม่ได้ Update Data)</td>')+"<td>"+(prod?ageTxt(b):esc(holdLeft(b)))+"</td><td>"+accBtn(b)+"</td></tr>"}).join("")+"</tbody></table>":'<div class="empty">ไม่มีรายการรอรับ</div>';
+  $("accTab").innerHTML=pend.length?(prod?'<div class="empty" style="padding:8px 12px;text-align:left">ตรวจสอบ Cust-Code / ชื่อลูกค้า / PC / Material ให้ตรงกับข้อมูลที่ได้รับก่อนกดรับ · ข้อมูลดึงจาก Excel อัตโนมัติทุก 30 วินาที</div>':"")+'<table><thead><tr><th>จองเมื่อ</th><th>ประเภท</th><th>เบอร์</th><th>ห้อง</th><th>ผู้จอง</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>Machine</th><th>'+(prod?"ค้างมา":"เวลาที่เหลือ")+'</th><th></th></tr></thead><tbody>'+pend.map(function(b){var i=bkInfo(b);return"<tr><td>"+esc(b.at||"")+"</td><td>"+esc(tn(b.type,b.sys))+"</td><td><b>"+esc(b.no)+"</b></td><td>"+esc(b.room||"")+"</td><td>"+esc(b.by||"")+"</td>"+(i?"<td>"+esc(i.code||"")+"</td><td>"+esc(i.cust||"")+"</td><td>"+esc(i.prod||"")+"</td><td>"+esc(i.mat||"")+"</td><td><b>"+esc(i.mach||"")+"</b></td>":'<td colspan="5" style="color:var(--mute)">รอข้อมูลจาก Excel (Scheduling ยังไม่ได้ Update Data)</td>')+"<td>"+(prod?ageTxt(b):esc(holdLeft(b)))+"</td><td>"+accBtn(b)+(can("book")&&!b.accTs&&(can("cancelAny")||b.by===user)?'<button class="btn l" data-xc="'+b.id+'" style="padding:3px 10px;font-size:12px">ยกเลิกจอง</button>':"")+"</td></tr>"}).join("")+"</tbody></table>":'<div class="empty">ไม่มีรายการรอรับ</div>';
 }
 var MTH=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 function ymFill(sy,sm,pairs){
@@ -894,7 +894,7 @@ function histUI(){
   $("histCnt").textContent=out.length.toLocaleString()+" รายการ";
   $("histTab").innerHTML=out.length?"<table><thead><tr><th>รับเมื่อ</th><th>รับโดย</th><th>ประเภท</th><th>เบอร์</th><th>ห้อง</th><th>ผู้จอง</th><th>สถานะ</th><th>Cust-Code</th><th>ชื่อลูกค้า</th><th>PC</th><th>Material</th><th>Machine</th></tr></thead><tbody>"+out.slice(0,500).map(function(o){var r=o.r,i=o.i;return"<tr><td>"+esc(new Date(r.accTs).toLocaleString("th-TH"))+"</td><td>"+esc(r.accBy)+"</td><td>"+esc(tn(r.type,r.sys))+"</td><td><b>"+esc(r.no)+"</b></td><td>"+esc(r.room)+"</td><td>"+esc(r.by)+'</td><td><span class="st '+o.st[0]+'">'+o.st[1]+"</span></td><td>"+esc(i.code||"")+"</td><td>"+esc(i.cust||"")+"</td><td>"+esc(i.prod||"")+"</td><td>"+esc(i.mat||"")+"</td><td>"+esc(i.mach||"")+"</td></tr>"}).join("")+"</tbody></table>":'<div class="empty">ยังไม่มีประวัติการรับ</div>';
 }
-document.addEventListener("click",function(e){var a=e.target.closest("[data-acc]");if(a)acceptHold(a.dataset.acc)});
+document.addEventListener("click",function(e){var a=e.target.closest("[data-acc]");if(a)acceptHold(a.dataset.acc);var x=e.target.closest("[data-xc]");if(x)cancelHold(x.dataset.xc)});
 $("btnSync").onclick=function(){pullAll().then(function(){toast("ดึงข้อมูลล่าสุดแล้ว")})};
 $("hq").oninput=histUI;$("hy").onchange=histUI;$("hm").onchange=histUI;
 
@@ -1008,6 +1008,8 @@ var ROLES={
   offset:{label:"Production · Offset",users:["Parsong","Chalearmchai","Terapong"],systems:["offset"],can:{book:0,cancelAny:0,flags:0,upload:0,accept:1,release:1}}
 };
 var roleKey="",lastSess=null,netOK=true;
+var SYSX={Khathawut:["flexo","offset"],Uthai:["flexo","offset"]};/* ผู้ใช้ที่เข้าได้มากกว่าระบบของแผนก */
+function sysOf(){var r=ROLES[roleKey];return (r&&SYSX[user])||(r?r.systems:[])}
 function can(k){var r=ROLES[roleKey];return !!(r&&r.can[k])}
 function curRole(){return $("uRole").value==="scheduling"?"scheduling":$("uDiv").value}
 function loginUsers(sel){
@@ -1026,7 +1028,7 @@ function permUI(){
   var rb=document.querySelector(".mode[data-m=reg]");if(rb){rb.hidden=!can("book");document.querySelector(".modes").style.gridTemplateColumns="repeat("+(can("book")?5:4)+",1fr)"}
   if(!can("flags"))document.querySelectorAll("#dbTab [data-a=close],#dbTab [data-a=open]").forEach(function(b){b.remove()});
   if(!can("cancelAny"))document.querySelectorAll("#dbTab [data-a=cancel],#res [data-x]").forEach(function(b){var id=b.dataset.b||b.dataset.x,bk=B.filter(function(x){return String(x.id)===String(id)})[0];if(bk&&bk.by!==user)b.remove()});
-  var r=ROLES[roleKey];$("back").hidden=!!(r&&r.systems.length===1);
+  var r=ROLES[roleKey];$("back").hidden=!!(r&&sysOf().length===1);
 }
 function cancelHold(id){
   var bk=B.filter(function(x){return String(x.id)===String(id)})[0];if(!bk)return;
