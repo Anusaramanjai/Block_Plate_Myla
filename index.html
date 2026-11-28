@@ -49,6 +49,23 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:9;max-width:90vw}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .ttl{text-align:center;font-size:22px;margin:6px 0 18px}
+
+.gear{position:fixed;right:22px;bottom:22px;z-index:40;width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(16,40,58,.92);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.5);backdrop-filter:blur(6px);transition:.25s}
+.gear:hover{transform:rotate(60deg);border-color:var(--yel);color:var(--yel)}
+#usrDlg{width:min(760px,94vw);max-height:90vh;overflow:auto}
+#usrDlg .bd{padding:18px 22px 20px}
+#usrDlg .grp{margin:0 0 16px}
+#usrDlg .grp h4{margin:0 0 8px;font-size:14px;color:var(--mute);font-weight:600;letter-spacing:.02em}
+#usrDlg .lst{display:flex;flex-wrap:wrap;gap:8px}
+#usrDlg .ch{display:inline-flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:14px}
+#usrDlg .ch label{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--mute);cursor:pointer}
+#usrDlg .ch label input{width:auto;margin:0;accent-color:var(--yel)}
+#usrDlg .ch button{width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;font-size:14px;line-height:1}
+#usrDlg .ch button:hover{background:var(--mag)}
+#usrDlg .add{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;border-top:1px solid var(--line);padding-top:16px}
+#usrDlg .add label{display:block;font-size:12px;color:var(--mute);margin-bottom:4px}
+#usrDlg .hint{font-size:12px;color:var(--mute);margin:10px 0 0}
+@media (max-width:600px){#usrDlg .add{grid-template-columns:1fr}.gear{right:14px;bottom:14px}}
 .pickhd{text-align:center;margin:18px 0 30px}
 .pickhd small{display:block;font:500 12px/1 "Prompt",sans-serif;letter-spacing:.34em;color:var(--mute);text-transform:uppercase;margin-bottom:12px}
 .pickhd h3{margin:0;font-size:30px;font-weight:600}
@@ -255,6 +272,15 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
   <p style="margin:0 0 6px;color:var(--mute)">กด “สั่ง Refresh ให้เลย” จะมีจอดำขึ้นมา (ไม่ต้องเปิดไฟล์ Excel) รอจนขึ้นสีเขียวแล้วปิดจอดำได้เลย แอปจะโหลดข้อมูลใหม่ให้เองเมื่อไฟล์อัปเดตเสร็จ</p>
   <p style="margin:0 0 16px;color:var(--mute);font-size:13px">ใช้ครั้งแรกบนเครื่องไหน ให้รัน install_refresh_button.bat 1 ครั้งก่อน และต้องเคยกด “เลือกไฟล์ใหม่” ชี้ไฟล์ Excel อย่างน้อย 1 ครั้ง</p>
   <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button class="btn l" id="dlgRNo">ยกเลิก</button><button class="btn c" id="dlgROk">Refresh แล้ว โหลดไฟล์</button><button class="btn" id="dlgRRun">สั่ง Refresh ให้เลย</button></div></div></dialog>
+<button class="gear" id="gear" title="จัดการผู้ใช้งาน" aria-label="จัดการผู้ใช้งาน" hidden>⚙</button>
+<dialog id="usrDlg"><div class="tb"><span class="dots"><i></i><i></i><i></i></span>จัดการผู้ใช้งาน</div><div class="bd">
+ <div id="usrBody"></div>
+ <div class="add"><div><label>ชื่อผู้ใช้ใหม่</label><input id="nuName" maxlength="30" autocomplete="off" placeholder="เช่น Somchai"></div>
+  <div><label>กลุ่ม</label><select id="nuGrp"><option value="scheduling">Scheduling (วางแผน)</option><option value="converting">Production · Converting</option><option value="offset">Production · Offset</option></select></div>
+  <button class="btn" id="nuAdd">+ เพิ่ม</button></div>
+ <p class="hint">ติ๊ก "Flexo+Offset" ให้ผู้ใช้ Production ที่ต้องเข้าได้ทั้ง 2 ระบบ · กลุ่ม Scheduling เข้าได้ทั้ง 2 ระบบอยู่แล้ว · รายชื่อถูกเก็บร่วมกันทุกเครื่องเมื่อเชื่อมต่อฐานข้อมูล</p>
+ <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn l" id="usrClose">ปิด</button></div>
+</div></dialog>
 <div class="toast" id="toast" role="status"></div>
 <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv" hidden>
 
@@ -366,7 +392,7 @@ function mapUI(){
   $("maps").innerHTML=FD.map(function(f){return "<div><label>"+f[1]+'</label><select data-k="'+f[0]+'"><option value="-1">— ไม่ใช้ —</option>'+S.headers.map(function(h,i){return '<option value="'+i+'"'+(i===S.map[f[0]]?" selected":"")+">"+esc(h)+"</option>"}).join("")+"</select></div>"}).join("");
 }
 function syncNo(){var t=$("fType").value;if(t==="block"||t==="plate"||t==="mylar"){$("hint").textContent="(เลือกจากเบอร์ว่าง)";return}var n=nextNo(t);$("hint").textContent=n?"(ถัดไป: "+n+")":"";if(!$("fNo").dataset.touched)$("fNo").value=n}
-function render(){if(roleKey&&S.mode==="reg"&&!can("book"))S.mode="find";render0();permUI();accUI()}
+function render(){if(roleKey&&S.mode==="reg"&&!can("book"))S.mode="find";render0();permUI();accUI();gearUI()}
 function render0(){
   expireHolds();labelsUI();
   ["flexo","offset"].forEach(function(s){$("c"+s[0].toUpperCase()+s.slice(1)).textContent=B.filter(function(b){return b.sys===s}).length+" รายการจอง"});
@@ -390,7 +416,7 @@ function render0(){
   var cols=["custcode","cust","prod","mat","sys","block","plate","mylar","L","W","H"].map(function(k){return FD.filter(function(f){return f[0]===k})[0]}),h="<table><thead><tr><th>ลำดับ</th>"+cols.map(function(c){return "<th>"+(c[0]==="block"&&off()?"Printing Plate-No.":c[1])+"</th>"}).join("")+"<th></th></tr></thead><tbody>",i=0;
   var line=function(o,first,last){return "<tr><td>"+first+"</td>"+cols.map(function(c){return "<td>"+esc(o[c[0]])+"</td>"}).join("")+"<td>"+last+"</td></tr>"};
   bs.forEach(function(b){h+=line(bobj(b),(b.accTs?'<span class="tag" style="background:#1d9e5a">รับแล้ว</span>':bkInfo(b)?'<span class="tag" style="background:#1ea0cf">เข้า Excel · รอรับ</span>':'<span class="tag">จอง</span>')+(b.room?' <small>'+esc(b.room)+(b.slot?' · '+esc(b.slot):'')+'</small>':''),accBtn(b)+'<button class="btn l" data-x="'+b.id+'" style="padding:3px 10px;font-size:12px">ยกเลิก</button>')});
-  rs.slice(0,300).forEach(function(e){h+=line(e.o,++i,e.x?'<span class="tag" style="background:#6b4fbb">พิมพ์ 2 เครื่อง อ่านจาก (Remark)</span>':"")});
+  rs.slice(0,300).forEach(function(e){h+=line(e.o,++i,e.x?'<span class="tag" style="background:#6b4fbb">เบอร์อีกเครื่อง (Remark)</span>':"")});
   $("cnt").textContent=(rs.length+bs.length).toLocaleString()+" รายการ";
   $("res").innerHTML=(rs.length||bs.length)?h+"</tbody></table>"+(rs.length>300?'<div class="empty">แสดง 300 จาก '+rs.length.toLocaleString()+" แถว · พิมพ์ค้นหาเพื่อกรองเพิ่ม</div>":""):'<div class="empty">'+(S.rows.length?"ไม่พบข้อมูลที่ตรงกับคำค้น":"โหลดไฟล์ Excel เพื่อค้นหา")+"</div>";
 }
@@ -435,7 +461,7 @@ $("uOk").onclick=function(){var n=$("uName").value;if(!n){toast("กรุณา
   roleKey=curRole();user=n;kvSet("user",n);kvSet("session",{role:roleKey,name:n});$("dlg").close();$("land").hidden=true;$("app").hidden=false;$("pick").hidden=false;$("detail").hidden=true;whoUI();
   var sy=sysOf();if(sy.length===1)open(sy[0]);else render();
   pullAll()};
-$("btnOut").onclick=function(){$("app").hidden=true;$("land").hidden=false;roleKey=""};
+$("btnOut").onclick=function(){$("app").hidden=true;$("land").hidden=false;roleKey="";gearUI()};
 $("btnPick").onclick=pick;$("btnUpdate").onclick=function(){if(!handle)return pick();confirmRefresh()};
 $("file").onchange=function(){if(this.files[0])readFile(this.files[0]);this.value=""};
 $("pick").onclick=function(e){var c=e.target.closest(".sc");if(c)open(c.dataset.s)};
@@ -1091,6 +1117,51 @@ function pullAll(){
 setInterval(function(){if(!document.hidden&&roleKey)pullAll()},30000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&roleKey)pullAll()});
 /* ---------- boot ---------- */
+
+/* ---- จัดการผู้ใช้งาน (เฉพาะ Scheduling) ---- */
+var UDEF=null;
+function usersCfg(){var c={scheduling:ROLES.scheduling.users.slice(),converting:ROLES.converting.users.slice(),offset:ROLES.offset.users.slice(),both:Object.keys(SYSX)};return c}
+function applyUsers(c){
+  if(!c||!c.scheduling||!c.converting||!c.offset)return;
+  ["scheduling","converting","offset"].forEach(function(k){if(Array.isArray(c[k])&&(k!=="scheduling"||c[k].length))ROLES[k].users=c[k].slice()});
+  var nb={};(c.both||[]).forEach(function(n){nb[n]=["flexo","offset"]});SYSX=nb;
+}
+function saveUsers(){
+  var c=usersCfg();kvSet("users",c);
+  if(online())rq("POST","app_config?on_conflict=key",{key:"users",value:c},"resolution=merge-duplicates,return=minimal").catch(function(){toast("บันทึกในเครื่องนี้แล้ว แต่ยังแชร์ให้เครื่องอื่นไม่ได้ — รัน users_migration.sql ใน Supabase ก่อน")});
+  loginUsers($("uName")&&$("uName").value);
+}
+function pullUsers(){
+  kvGet("users").then(function(c){if(c){applyUsers(c);loginUsers()}});
+  if(online())rq("GET","app_config?key=eq.users&select=value").then(function(r){if(r&&r[0]&&r[0].value){applyUsers(r[0].value);kvSet("users",r[0].value);loginUsers();if($("usrDlg").open)usrUI()}}).catch(function(){});
+}
+function gearUI(){$("gear").hidden=!(roleKey==="scheduling"&&!$("pick").hidden&&!$("app").hidden)}
+function usrUI(){
+  var G=[["scheduling","Scheduling (วางแผน)"],["converting","Production · Converting"],["offset","Production · Offset"]];
+  $("usrBody").innerHTML=G.map(function(g){var l=ROLES[g[0]].users;
+    return '<div class="grp"><h4>'+g[1]+' · '+l.length+' คน</h4><div class="lst">'+(l.length?l.map(function(n){
+      return '<span class="ch">'+esc(n)+(g[0]!=="scheduling"?'<label><input type="checkbox" data-ub="'+esc(n)+'"'+(SYSX[n]?" checked":"")+'>Flexo+Offset</label>':"")+'<button data-ud="'+g[0]+'|'+esc(n)+'" title="ลบ">×</button></span>'}).join(""):'<span style="color:var(--mute);font-size:13px">ยังไม่มีผู้ใช้</span>')+'</div></div>'}).join("");
+}
+$("gear").onclick=function(){usrUI();$("nuName").value="";$("usrDlg").showModal()};
+$("usrClose").onclick=function(){$("usrDlg").close()};
+$("usrBody").addEventListener("click",function(e){
+  var d=e.target.closest("[data-ud]");if(!d)return;var p=d.dataset.ud.split("|"),g=p[0],n=p[1];
+  if(n===user){toast("ลบชื่อที่กำลังใช้งานอยู่ไม่ได้");return}
+  if(g==="scheduling"&&ROLES.scheduling.users.length<=1){toast("ต้องเหลือผู้ใช้ Scheduling อย่างน้อย 1 คน");return}
+  if(!confirm("ลบ "+n+" ออกจากระบบ?\n(รายการจอง/ประวัติของเขายังอยู่เหมือนเดิม)"))return;
+  ROLES[g].users=ROLES[g].users.filter(function(x){return x!==n});delete SYSX[n];saveUsers();usrUI()});
+$("usrBody").addEventListener("change",function(e){
+  var c=e.target.closest("[data-ub]");if(!c)return;var n=c.dataset.ub;
+  if(c.checked)SYSX[n]=["flexo","offset"];else delete SYSX[n];saveUsers()});
+$("nuAdd").onclick=function(){
+  var n=$("nuName").value.trim().replace(/\s+/g," "),g=$("nuGrp").value;
+  if(!n){toast("กรุณาใส่ชื่อผู้ใช้");return}
+  if(/[|<>"]/.test(n)){toast("ชื่อห้ามมีอักขระพิเศษ | < > \"");return}
+  var dup=["scheduling","converting","offset"].some(function(k){return ROLES[k].users.some(function(x){return x.toLowerCase()===n.toLowerCase()})});
+  if(dup){toast("มีชื่อนี้อยู่ในระบบแล้ว");return}
+  ROLES[g].users.push(n);saveUsers();usrUI();$("nuName").value="";toast("เพิ่ม "+n+" แล้ว")};
+$("nuName").addEventListener("keydown",function(e){if(e.key==="Enter")$("nuAdd").click()});
+pullUsers();
 Promise.all([kvGet("user"),kvGet("bookings2"),kvGet("data"),kvGet("map2"),kvGet("handle"),kvGet("flags"),kvGet("session"),kvGet("accdone"),kvGet("releases"),kvGet("acclog")]).then(function(v){
   user=v[0]||"";B=v[1]||[];F=v[5]||{};
   if(v[6]){lastSess=v[6]}
