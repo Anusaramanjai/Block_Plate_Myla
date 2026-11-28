@@ -278,7 +278,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(400px,92vw);background:va
  <div class="add"><div><label>ชื่อผู้ใช้ใหม่</label><input id="nuName" maxlength="30" autocomplete="off" placeholder="เช่น Somchai"></div>
   <div><label>กลุ่ม</label><select id="nuGrp"><option value="scheduling">Scheduling (วางแผน)</option><option value="converting">Production · Converting</option><option value="offset">Production · Offset</option></select></div>
   <button class="btn" id="nuAdd">+ เพิ่ม</button></div>
- <p class="hint">เลือก "Flexo+Offset" เพื่อให้ผู้ใช้เข้าได้ทั้ง 2 ระบบ</p>
+ <p class="hint">ติ๊ก "Flexo+Offset" ให้ผู้ใช้ Production ที่ต้องเข้าได้ทั้ง 2 ระบบ · กลุ่ม Scheduling เข้าได้ทั้ง 2 ระบบอยู่แล้ว · รายชื่อถูกเก็บร่วมกันทุกเครื่องเมื่อเชื่อมต่อฐานข้อมูล</p>
  <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn l" id="usrClose">ปิด</button></div>
 </div></dialog>
 <div class="toast" id="toast" role="status"></div>
@@ -1109,12 +1109,24 @@ function pullAll(){
     if(v[4]){var loc0={};ALG.forEach(function(r){if(r.snap)loc0[r.id]=r.snap});var sv={};(v[5]||[]).forEach(function(x){sv[x.id]={code:x.code||"",cust:x.cust||"",prod:x.prod||"",mat:x.mat||"",mach:x.mach||"",at:+x.at||0}});var ss=v[4].map(fromLog),ll=ALG.filter(function(r){return r.u&&!ss.some(function(s){return s.id===r.id})});ALG=ss.concat(ll);var up=[];ALG.forEach(function(r){if(sv[r.id])r.snap=sv[r.id];else if(loc0[r.id]&&!r.snap){r.snap=loc0[r.id];if(v[5])up.push(r)}});kvSet("acclog",ALG);if(ll.length)pushLog(ll);if(up.length)pushSnap(up)}
     var m=v[2][0];
     if(m&&+m.ver!==S.remoteVer)return rq("GET","excel_snapshot?select=*&id=eq.1").then(function(x){var r=x[0];
+      var ps=can("upload")&&S.rows.length?relSnap(S.rows,S.map):null;
       S.headers=r.headers;S.rows=r.rows;S.name=r.name;S.fileTime=+r.file_time;S.remoteVer=+r.ver;
       autoMap();if(r.map){var am=S.map;S.map=r.map;FD.forEach(function(f){if(S.map[f[0]]===undefined)S.map[f[0]]=am[f[0]]})}
-      kvSet("data",{h:S.headers,r:S.rows,n:S.name,t:S.fileTime,v:S.remoteVer});kvSet("map2",S.map);mapUI();stats()});
+      kvSet("data",{h:S.headers,r:S.rows,n:S.name,t:S.fileTime,v:S.remoteVer});kvSet("map2",S.map);mapUI();stats();if(ps){try{detectReleases(ps)}catch(e){}}});
   }).then(function(){pulling=false;freezeSnaps();trackDone();if(roleKey)whoUI();render()},function(e){pulling=false;netErr()});
 }
 setInterval(function(){if(!document.hidden&&roleKey)pullAll()},30000);
+/* โหลดไฟล์ Excel ใหม่อัตโนมัติ เมื่อไฟล์ถูกอัปเดต (เช่นจาก Task Scheduler ที่สั่ง Refresh ไว้) — เฉพาะผู้มีสิทธิ์อัปโหลด */
+var autoBusy=false;
+setInterval(async function(){
+  if(autoBusy||document.hidden||!roleKey||!can("upload")||!handle||!S.fileTime)return;
+  autoBusy=true;
+  try{
+    if(await handle.queryPermission({mode:"read"})!=="granted")return;
+    var f=await handle.getFile();
+    if(f.lastModified>S.fileTime&&Date.now()-f.lastModified>8000){readFile(f);toast("โหลดข้อมูลใหม่จาก Excel อัตโนมัติแล้ว")}
+  }catch(e){}finally{autoBusy=false}
+},60000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&roleKey)pullAll()});
 /* ---------- boot ---------- */
 
